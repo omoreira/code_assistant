@@ -1,0 +1,17 @@
+# Development dependencies for code-assistant
+-r requirements.txt
+
+# Testing
+pytest>=7.0
+pytest-cov>=3.0
+pytest-mock>=3.10
+
+# Code Quality
+black>=22.0
+flake8>=4.0
+mypy>=0.950
+pylint>=2.13
+
+# Development Tools
+ipython>=8.0
+jupyter>=1.0.0

@@ -1,0 +1,59 @@
+# Default configuration for code-assistant
+# All modules inherit these defaults and can override specific values
+
+project:
+  name: code-assistant
+  version: 0.1.0
+  description: "Local Coding Assistant with code generation, debugging, and patching capabilities"
+  author: "Olga Moreira"
+  author_email: "olga.moreira@gmail.com"
+  repository: "https://github.com/omoreira/code_assistant"
+
+modules:
+  enabled:
+    - code_starter
+    - code_debugger
+    - code_patcher
+  
+  code_starter:
+    description: "Interactive project creation and code generation"
+    enabled: true
+  
+  code_debugger:
+    description: "Code debugging and analysis utilities"
+    enabled: true
+  
+  code_patcher:
+    description: "Code patching and refactoring tools"
+    enabled: true
+
+llm:
+  provider: "ollama"
+  model: "deepseek-coder:6.7b"
+  api_endpoint: "http://localhost:11434"
+  timeout: 300
+  temperature: 0.7
+  max_tokens: 2048
+
+paths:
+  output_dir: "./generated_projects"
+  config_dir: "./config"
+  docs_dir: "./docs"
+  tests_dir: "./tests"
+  shared_dir: "./shared"
+
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "code_assistant.log"
+
+features:
+  syntax_highlighting: true
+  color_output: true
+  interactive_mode: true
+  progress_bars: true
+
+development:
+  debug: false
+  verbose: false
+  test_mode: false

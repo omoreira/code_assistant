@@ -1,0 +1,51 @@
+# REPOMAP
+
+./my_project
+        |______ src/
+        |______ main.py
+        |______ utils.py
+        |______ tests/
+        |______ test_main.py
+
+
+
+# PSEUDOCODE
+
+
+## ./my_project/src/main.py
+
+INPUT: Command line arguments
+
+OUTPUT: Application result
+
+TASK: Main entry point for the application
+
+CONDITIONS: Python 3.8+
+
+PREFERENCES: Use type hints
+
+
+## ./my_project/src/utils.py
+
+INPUT: Various data types
+
+OUTPUT: Processed data
+
+TASK: Utility functions for data processing
+
+CONDITIONS: None
+
+PREFERENCES: Use functional programming style
+
+
+## ./my_project/tests/test_main.py
+
+INPUT: Test parameters
+
+OUTPUT: Test results
+
+TASK: Unit tests for main module
+
+CONDITIONS: pytest must be installed
+
+PREFERENCES: Use pytest fixtures
