@@ -2,13 +2,13 @@
 
 A comprehensive local coding assistant system with three integrated modules for code generation, debugging, and patching.
 
-**Author:** Olga Moreira
-**License:** MIT
-**Repository:** https://github.com/omoreira/code_assistant
-**Objective:** This app aims to provide a local, low-resource coding assistant. Users should create a starter file with a repomap and pseudocode for each script file.
-**Assistive Tools and LLMs:** This code was developed from author's pseudocode. VS Code Continue (LLM: Claude 3 Haiku) was used to auto-convert pseudocode into Python-based modules in a similar process that this app will offer.
-**Status:** In human auditing and testing phase. This base code is still in the initial phase of development; use with caution!
-**Last Updated by Human:** 2026-09-28
+- **Author:** Olga Moreira
+- **License:** MIT
+- **Repository:** https://github.com/omoreira/code_assistant
+- **Objective:** This app aims to provide a local, low-resource coding assistant. Users should create a starter file with a repomap and pseudocode for each script file.
+- **Assistive Tools and LLMs:** This code was developed from author's pseudocode. VS Code Continue (LLM: Claude 3 Haiku) was used to auto-convert pseudocode into Python-based modules in a similar process that this app will offer. For further information, see AI Assistance Disclosure below.
+- **Status:** In human auditing and testing phase. This base code is still in the initial phase of development; use with caution!
+- **Last Updated by Human:** 2026-09-28
 
 ## Overview
 
