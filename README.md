@@ -12,7 +12,7 @@ A comprehensive local coding assistant system with three integrated modules for 
 
 ## Overview
 
-Code Assistant is a modular Python package that leverages local LLM (ollama) to provide intelligent coding assistance without cloud dependencies. It consists of three main components:
+Code Assistant is a modular Python package that leverages local LLM (ollama) to provide intelligent coding assistance without cloud dependencies. It consists of four main components:
 
 ### **code_starter**
 Interactive tool for starting new projects. Creates complete project structures from simple specifications.
@@ -21,12 +21,23 @@ Interactive tool for starting new projects. Creates complete project structures 
 - **blueprint_renderer.py**: Generate directory skeletons from specifications
 - **pseudocode_renderer.py**: Convert pseudocode to working Python code
 - **github_repo_planner.py**: Automate GitHub repository setup
+- **scripts_writer.py**: Automated shell script generation
+- **code_documenter.py**: Automated documentation generation
 
 ### **code_debugger** (In Development)
 Tools for analyzing and debugging existing code with AI assistance.
 
 ### **code_patcher** (In Development)
-Automated code patching and refactoring utilities.
+Automated code patching and patching utilities.
+
+### **code_refractor** (New)
+Intelligent code refactoring with automatic path and name verification.
+Ensures that refactoring operations don't break imports, paths, or dependencies.
+
+- **refactoring_verifier.py**: Verify refactoring safety before execution
+- **code_refactorer.py**: Execute refactoring with automatic updates
+- **path_resolver.py**: Resolve and validate all paths after refactoring
+- **dependency_mapper.py**: Map code dependencies to analyze impact
 
 ## Quick Start
 
@@ -77,9 +88,16 @@ code_assistant/
 │   ├── starterfile_creator.py
 │   ├── blueprint_renderer.py
 │   ├── pseudocode_renderer.py
-│   └── github_repo_planner.py
+│   ├── github_repo_planner.py
+│   ├── scripts_writer.py
+│   └── code_documenter.py
 ├── code_debugger/          # Debugger module (in development)
 ├── code_patcher/           # Patcher module (in development)
+├── code_refractor/         # Refactoring verification module
+│   ├── refactoring_verifier.py
+│   ├── code_refactorer.py
+│   ├── path_resolver.py
+│   └── dependency_mapper.py
 ├── shared/                 # Shared utilities
 │   ├── config.py           # Configuration management
 │   ├── logging.py          # Logging utilities
@@ -95,7 +113,15 @@ code_assistant/
 │   ├── CONTRIBUTING.md     # Contributing guidelines
 │   ├── code_starter/       # Module-specific docs
 │   ├── code_debugger/
-│   └── code_patcher/
+│   ├── code_patcher/
+│   └── code_refractor/
+├── scripts/                # Shell scripts (executable)
+│   ├── setup.sh
+│   ├── install_deps.sh
+│   ├── run_code_assistant.sh
+│   ├── run_starter.sh
+│   ├── run_debugger.sh
+│   └── run_patcher.sh
 ├── tests/                  # Test suite
 │   ├── unit/               # Unit tests
 │   └── integration/        # Integration tests
@@ -110,6 +136,8 @@ code_assistant/
 - **[code_starter Documentation](docs/code_starter/README.md)** - Starter module guide
 - **[code_debugger Documentation](docs/code_debugger/README.md)** - Debugger module guide
 - **[code_patcher Documentation](docs/code_patcher/README.md)** - Patcher module guide
+- **[code_refractor Documentation](docs/code_refractor/README.md)** - Refactoring verification guide
+- **[SCRIPTS_GUIDE.md](docs/SCRIPTS_GUIDE.md)** - Shell scripts reference
 
 ## Configuration
 

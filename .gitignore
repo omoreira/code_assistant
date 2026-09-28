@@ -132,7 +132,19 @@ output/
 *.pyc
 .env.local
 
-# TESTING
-test/
+# Temporary files and folders
+temp/
+tmp/
+tempfiles/
+.temp/
+.tmp/
+temp_*
+*.tmp
+
+# Testing (include tests/ to prevent accidental commits of test artifacts)
+tests/
+.pytest_cache/
+.coverage
+htmlcov/
 FINAL_COMPLETION_REPORT.txt
 SCRIPTS_VERIFICATION.txt

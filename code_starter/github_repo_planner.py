@@ -350,6 +350,8 @@ class GitHubRepoPlanner:
         """Create .gitignore file."""
         content = '''# Virtual environments
 venv/
+        content = '''# Virtual environments
+venv/
 env/
 ENV/
 .venv
@@ -371,11 +373,21 @@ build/
 *~
 .DS_Store
 
-# Testing
+# Testing (exclude test artifacts and tests directory)
 .pytest_cache/
 .coverage
 htmlcov/
 .tox/
+tests/
+
+# Temporary files and folders
+temp/
+tmp/
+tempfiles/
+.temp/
+.tmp/
+temp_*
+*.tmp
 
 # Environment
 .env
@@ -384,7 +396,6 @@ htmlcov/
 '''
         with open('.gitignore', 'w') as f:
             f.write(content)
-    
     def _create_license(self):
         """Create MIT LICENSE file."""
         content = f'''MIT License

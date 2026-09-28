@@ -36,10 +36,10 @@ All scripts have been:
 
 ```bash
 # 1. Make setup script executable (if needed)
-chmod +x setup.sh
+chmod +x scripts/setup.sh
 
 # 2. Run setup (creates venv, installs dependencies)
-./setup.sh
+./scripts/setup.sh
 
 # That's it! You're ready to use code-assistant
 ```
@@ -48,12 +48,12 @@ chmod +x setup.sh
 
 ```bash
 # Run main menu (choose any module)
-./run_code_assistant.sh
+./scripts/run_code_assistant.sh
 
 # Or run specific module
-./run_starter.sh
-./run_debugger.sh
-./run_patcher.sh
+./scripts/run_starter.sh
+./scripts/run_debugger.sh
+./scripts/run_patcher.sh
 ```
 
 ---
@@ -66,7 +66,7 @@ chmod +x setup.sh
 
 **Usage:**
 ```bash
-./setup.sh
+./scripts/setup.sh
 ```
 
 **What it does:**
@@ -112,9 +112,9 @@ Next Steps:
 
 **Usage:**
 ```bash
-./install_deps.sh              # Install runtime only
-./install_deps.sh --dev        # Install runtime + dev
-./install_deps.sh --help       # Show help
+./scripts/install_deps.sh              # Install runtime only
+./scripts/install_deps.sh --dev        # Install runtime + dev
+./scripts/install_deps.sh --help       # Show help
 ```
 
 **Options:**
@@ -150,7 +150,7 @@ Code Assistant - Install Dependencies
 
 **Usage:**
 ```bash
-./run_code_assistant.sh
+./scripts/run_code_assistant.sh
 ```
 
 **Features:**
@@ -202,14 +202,14 @@ $ ./run_code_assistant.sh
 
 **Usage:**
 ```bash
-./run_starter.sh                    # Interactive mode (default)
-./run_starter.sh -i                 # Same as above
-./run_starter.sh --interactive      # Same as above
-./run_starter.sh -c                 # Create new project
-./run_starter.sh --create           # Same as above
-./run_starter.sh --status           # Show status
-./run_starter.sh --setup            # Setup environment
-./run_starter.sh -h                 # Show help
+./scripts/run_starter.sh                    # Interactive mode (default)
+./scripts/run_starter.sh -i                 # Same as above
+./scripts/run_starter.sh --interactive      # Same as above
+./scripts/run_starter.sh -c                 # Create new project
+./scripts/run_starter.sh --create           # Same as above
+./scripts/run_starter.sh --status           # Show status
+./scripts/run_starter.sh --setup            # Setup environment
+./scripts/run_starter.sh -h                 # Show help
 ```
 
 **Options:**
@@ -223,7 +223,7 @@ $ ./run_code_assistant.sh
 
 **Interactive mode:**
 ```bash
-$ ./run_starter.sh
+$ ./scripts/run_starter.sh
 ✓ Virtual environment activated
 ✓ Dependencies installed
 
@@ -233,7 +233,7 @@ Launching code_starter in interactive mode...
 
 **Create project:**
 ```bash
-$ ./run_starter.sh --create
+$ ./scripts/run_starter.sh --create
 
 Enter project name: my_project
 Enter project description: My awesome project
@@ -245,7 +245,7 @@ Enter dependencies (comma-separated): flask,sqlalchemy
 
 **Check status:**
 ```bash
-$ ./run_starter.sh --status
+$ ./scripts/run_starter.sh --status
 
 Environment Status:
 
@@ -262,11 +262,11 @@ Environment Status:
 
 **Usage:**
 ```bash
-./run_debugger.sh                   # Show status (module in dev)
-./run_debugger.sh --info            # Show detailed info
-./run_debugger.sh --docs            # Show documentation links
-./run_debugger.sh --status          # Show environment status
-./run_debugger.sh -h                # Show help
+./scripts/run_debugger.sh                   # Show status (module in dev)
+./scripts/run_debugger.sh --info            # Show detailed info
+./scripts/run_debugger.sh --docs            # Show documentation links
+./scripts/run_debugger.sh --status          # Show environment status
+./scripts/run_debugger.sh -h                # Show help
 ```
 
 **Options:**
@@ -283,7 +283,7 @@ Environment Status:
 
 **Example output:**
 ```bash
-$ ./run_debugger.sh --info
+$ ./scripts/run_debugger.sh --info
 
 Code Debugger Module
 
@@ -317,11 +317,11 @@ For more details, see: docs/code_debugger/README.md
 
 **Usage:**
 ```bash
-./run_patcher.sh                    # Show status (module in dev)
-./run_patcher.sh --info             # Show detailed info
-./run_patcher.sh --docs             # Show documentation links
-./run_patcher.sh --status           # Show environment status
-./run_patcher.sh -h                 # Show help
+./scripts/run_patcher.sh                    # Show status (module in dev)
+./scripts/run_patcher.sh --info             # Show detailed info
+./scripts/run_patcher.sh --docs             # Show documentation links
+./scripts/run_patcher.sh --status           # Show environment status
+./scripts/run_patcher.sh -h                 # Show help
 ```
 
 **Options:**
@@ -340,10 +340,10 @@ For more details, see: docs/code_debugger/README.md
 
 ```bash
 # 1. Make scripts executable
-chmod +x *.sh
+chmod +x scripts/*.sh
 
 # 2. Run setup
-./setup.sh
+./scripts/setup.sh
 
 # Answer the prompts
 # - Virtual environment creation: auto (creates if not exists)
@@ -356,27 +356,27 @@ chmod +x *.sh
 
 ```bash
 # Update runtime dependencies
-./install_deps.sh
+./scripts/install_deps.sh
 
 # Update runtime + development
-./install_deps.sh --dev
+./scripts/install_deps.sh --dev
 ```
 
 ### Task 3: Run code_starter Interactively
 
 ```bash
 # Option A: Use main menu
-./run_code_assistant.sh
+./scripts/run_code_assistant.sh
 # Then choose option 1
 
 # Option B: Direct
-./run_starter.sh
+./scripts/run_starter.sh
 ```
 
 ### Task 4: Create New Project from Command Line
 
 ```bash
-./run_starter.sh --create
+./scripts/run_starter.sh --create
 # Follow prompts to create project specification
 ```
 
@@ -384,11 +384,11 @@ chmod +x *.sh
 
 ```bash
 # Option A: Main menu
-./run_code_assistant.sh
+./scripts/run_code_assistant.sh
 # Then choose option 4
 
 # Option B: Direct
-./run_starter.sh --status
+./scripts/run_starter.sh --status
 ```
 
 ### Task 6: Reinstall Everything
@@ -398,7 +398,7 @@ chmod +x *.sh
 rm -rf venv
 
 # Reinstall from scratch
-./setup.sh
+./scripts/setup.sh
 ```
 
 ### Task 7: Use Virtual Environment Manually
@@ -408,7 +408,7 @@ rm -rf venv
 source venv/bin/activate
 
 # Now use python, pip, etc. directly
-python3 -c "from code_starter import StarterFileCreator; ..."
+python3 -c "from code_refractor import RefactoringVerifier; ..."
 
 # Deactivate when done
 deactivate
@@ -453,7 +453,7 @@ All scripts use color-coded output:
 
 **Solution:**
 ```bash
-chmod +x *.sh
+chmod +x scripts/*.sh
 ```
 
 ### Issue: "Python 3 not found"
@@ -476,7 +476,7 @@ brew install python3
 **Solution:**
 ```bash
 # Run setup first
-./setup.sh
+./scripts/setup.sh
 ```
 
 ### Issue: Module import errors
@@ -484,10 +484,10 @@ brew install python3
 **Solution:**
 ```bash
 # Reinstall dependencies
-./install_deps.sh --dev
+./scripts/install_deps.sh --dev
 
 # Or full setup
-./setup.sh
+./scripts/setup.sh
 ```
 
 ### Issue: Scripts not executable
@@ -495,10 +495,10 @@ brew install python3
 **Solution:**
 ```bash
 # Make all scripts executable
-chmod +x *.sh
+chmod +x scripts/*.sh
 
 # Verify
-ls -l *.sh
+ls -l scripts/
 # Should show 'x' in permissions
 ```
 
@@ -507,10 +507,10 @@ ls -l *.sh
 **Solution:**
 ```bash
 # Install dependencies
-./install_deps.sh
+./scripts/install_deps.sh
 
 # Or if venv not activated:
-./setup.sh
+./scripts/setup.sh
 ```
 
 ---
@@ -556,12 +556,12 @@ main "$@"
 ```
 START
   │
-  ├─→ ./setup.sh                      (First time only)
+  ├─→ ./scripts/setup.sh                      (First time only)
   │   ├─ Creates venv
   │   ├─ Installs deps
   │   └─ Verifies install
   │
-  └─→ ./run_code_assistant.sh        (Daily use)
+  └─→ ./scripts/run_code_assistant.sh        (Daily use)
       ├─ Option 1: run_starter.sh
       ├─ Option 2: run_debugger.sh
       ├─ Option 3: run_patcher.sh
@@ -569,9 +569,9 @@ START
       └─ Option 5: Exit
 
 Or use specific scripts directly:
-  ├─ ./run_starter.sh
-  ├─ ./run_debugger.sh
-  └─ ./run_patcher.sh
+  ├─ ./scripts/run_starter.sh
+  ├─ ./scripts/run_debugger.sh
+  └─ ./scripts/run_patcher.sh
 ```
 
 ---
@@ -617,9 +617,9 @@ Or use specific scripts directly:
 
 All 6 scripts are ready to use:
 
-1. **First time:** Run `./setup.sh`
-2. **Then:** Use `./run_code_assistant.sh` or specific scripts
-3. **Manage:** Use `./install_deps.sh` for updates
+1. **First time:** Run `./scripts/setup.sh`
+2. **Then:** Use `./scripts/run_code_assistant.sh` or specific scripts
+3. **Manage:** Use `./scripts/install_deps.sh` for updates
 
 **That's it! Enjoy using code-assistant!** 🚀
 
