@@ -2,15 +2,19 @@
 
 A comprehensive local coding assistant system with three integrated modules for code generation, debugging, and patching.
 
-**Author:** Olga Moreira  
-**License:** MIT  
+**Author:** Olga Moreira
+**License:** MIT
 **Repository:** https://github.com/omoreira/code_assistant
+**Objective:** This app aims to provide a local, low-resource coding assistant. Users should create a starter file with a repomap and pseudocode for each script file.
+**Assistive Tools and LLMs:** This code was developed from author's pseudocode. VS Code Continue (LLM: Claude 3 Haiku) was used to auto-convert pseudocode into Python-based modules in a similar process that this app will offer.
+**Status:** In human auditing and testing phase. This base code is still in the initial phase of development; use with caution!
+**Last Updated by Human:** 2026-09-28
 
 ## Overview
 
 Code Assistant is a modular Python package that leverages local LLM (ollama) to provide intelligent coding assistance without cloud dependencies. It consists of three main components:
 
-### 🚀 **code_starter**
+### **code_starter**
 Interactive tool for starting new projects. Creates complete project structures from simple specifications.
 
 - **starterfile_creator.py**: Interactive project specification builder
@@ -18,10 +22,10 @@ Interactive tool for starting new projects. Creates complete project structures 
 - **pseudocode_renderer.py**: Convert pseudocode to working Python code
 - **github_repo_planner.py**: Automate GitHub repository setup
 
-### 🐛 **code_debugger** (In Development)
+### **code_debugger** (In Development)
 Tools for analyzing and debugging existing code with AI assistance.
 
-### 🔧 **code_patcher** (In Development)
+### **code_patcher** (In Development)
 Automated code patching and refactoring utilities.
 
 ## Quick Start
@@ -259,19 +263,22 @@ For issues, questions, or feature requests:
 - Check documentation: https://github.com/omoreira/code_assistant/tree/main/docs
 - Contact: olga.moreira@gmail.com
 
-## Roadmap
-
-- [ ] Complete code_debugger module with debugging utilities
-- [ ] Complete code_patcher module with refactoring tools
-- [ ] Add CI/CD workflows (GitHub Actions)
-- [ ] Expand LLM model support beyond deepseek-coder
-- [ ] Add web UI for interactive project creation
-- [ ] Pre-commit hooks for code quality
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md) for version history and release notes.
+See [CHANGELOG.md](docs/CHANGELOG.md) for version history and release notes.
 
 ---
 
-**Made with ❤️ by Olga Moreira**
+## AI Disclosure Assistance
+
+The development of this project involved the use of AI tools, including VS Code Continue (Claude 3 Haiku) and GitHub Copilot in the same spirit as any modern development environment might use IDE code completion, search engines, or documentation assistants.
+
+These tools were used for:
+
+- Generating boilerplate code and debugging suggestions
+- Refining documentation and organizing materials
+
+However, all architectural decisions, design logic, modular framework, and core vision were conceived and guided by the human creator (Olga Moreira). This project reflects years of research into low-resource coding assistance, modular and decentralized design principles.
+
+**This disclosure is offered in the interest of transparency and to acknowledge that while AI can support structured thinking and development, it does not replace human intent, authorship, or ethical responsibility.**
