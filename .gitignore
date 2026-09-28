@@ -131,3 +131,8 @@ generated_projects/
 output/
 *.pyc
 .env.local
+
+# TESTING
+test/
+FINAL_COMPLETION_REPORT.txt
+SCRIPTS_VERIFICATION.txt
