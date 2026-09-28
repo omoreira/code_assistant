@@ -122,7 +122,7 @@ code_assistant/
 │   ├── run_starter.sh
 │   ├── run_debugger.sh
 │   └── run_patcher.sh
-├── tests/                  # Test suite
+├── tests/                  # Test suite (NOTE: Tests are not included in this early development)
 │   ├── unit/               # Unit tests
 │   └── integration/        # Integration tests
 └── setup.py                # Package configuration
