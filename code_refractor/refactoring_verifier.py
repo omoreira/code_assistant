@@ -78,6 +78,22 @@ class RefactoringVerifier:
             List of issues found (empty if safe)
         """
         self.issues = []
+
+        # Refactoring paths are project-relative. Reject traversal (including
+        # existing symlinks) before any checks can inspect or mutate files.
+        for path in (old_path, new_path):
+            candidate = (self.project_root / path).resolve()
+            try:
+                candidate.relative_to(self.project_root.resolve())
+            except ValueError:
+                self.issues.append(RefactoringIssue(
+                    severity="error",
+                    file_path=path,
+                    issue_type="path_outside_project",
+                    message=f"Path escapes project root: {path}",
+                ))
+        if any(issue.issue_type == "path_outside_project" for issue in self.issues):
+            return self.issues
         
         # Create refactoring map
         refmap = RefactoringMap(
@@ -131,7 +147,7 @@ class RefactoringVerifier:
         ]
         
         for python_file in self.project_root.rglob("*.py"):
-            if python_file.samefile(self.project_root / old_path):
+            if python_file == self.project_root / old_path:
                 continue
             
             try:

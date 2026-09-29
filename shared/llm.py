@@ -59,7 +59,7 @@ class LLMInterface:
                 timeout=5
             )
             return response.status_code == 200
-        except (requests.RequestException, Exception):
+        except requests.RequestException:
             return False
     
     def call(
@@ -84,12 +84,6 @@ class LLMInterface:
             ConnectionError: If API unreachable
             ValueError: If response is invalid
         """
-        if not self.is_available():
-            raise ConnectionError(
-                f"LLM API not available at {self.api_endpoint}. "
-                "Ensure ollama is running."
-            )
-        
         url = f"{self.api_endpoint}/api/generate"
         
         # Use provided values or defaults

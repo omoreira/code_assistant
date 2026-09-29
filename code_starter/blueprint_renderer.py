@@ -1,8 +1,7 @@
 """
 blueprint_renderer.py
 
-Scans the starterfile.pseudo and creates the directory tree and placeholder files
-defined in the REPOMAP section.
+Scans the starterfile.pseudo and creates empty directories defined in REPOMAP.
 
 INPUT: starterfile.pseudo
 OUTPUT: "success" or "fail"
@@ -10,9 +9,8 @@ OUTPUT: "success" or "fail"
 TASK:
     1. Parse starterfile.pseudo to extract REPOMAP
     2. Create directories as defined in REPOMAP
-    3. Create empty placeholder files
-    4. Skip creation if directories/files already exist (do not overwrite)
-    5. Return status message
+    3. Ignore file entries and tree glyphs
+    4. Return status message
 """
 
 import os
@@ -29,7 +27,7 @@ def parse_repomap(filepath: str) -> Dict[str, List[str]]:
     Returns dict with structure:
     {
         'directories': ['./code_assistant', './code_assistant/code_starter', ...],
-        'files': ['./code_assistant/blueprint_renderer.py', ...]
+        'files': []  # retained for backwards compatibility
     }
     """
     try:
@@ -39,12 +37,11 @@ def parse_repomap(filepath: str) -> Dict[str, List[str]]:
         # Extract REPOMAP section (between # REPOMAP and # PSEUDOCODE)
         repomap_match = re.search(r'# REPOMAP\n(.*?)(?=\n# PSEUDOCODE|\Z)', content, re.DOTALL)
         if not repomap_match:
-            return None
+            return {'directories': [], 'files': []}
         
         repomap_content = repomap_match.group(1)
         
         directories = []
-        files = []
         current_dir_stack = []  # Track directory nesting level
         
         for line in repomap_content.split('\n'):
@@ -58,8 +55,9 @@ def parse_repomap(filepath: str) -> Dict[str, List[str]]:
             if not clean_line:
                 continue
             
-            # Remove tree characters (|, _, -)
-            clean_line = re.sub(r'^[|\-_\s]+', '', clean_line).strip()
+            # Ignore the tree connector glyphs. Only the entry text and its
+            # indentation determine the directory hierarchy.
+            clean_line = re.sub(r'^[|\-+`_\s]+', '', clean_line).strip()
             
             # Extract directory or file name (remove trailing comments)
             item_name = re.split(r'\s*\(', clean_line)[0].strip()
@@ -71,37 +69,23 @@ def parse_repomap(filepath: str) -> Dict[str, List[str]]:
             while len(current_dir_stack) > indent_level:
                 current_dir_stack.pop()
             
-            # Determine if it's a directory or file
-            if item_name.endswith('/'):
-                # It's a directory
-                dir_name = item_name[:-1]  # Remove trailing /
-                
-                # Build full path
-                if current_dir_stack:
-                    full_path = '/'.join(current_dir_stack) + '/' + dir_name
-                else:
-                    full_path = dir_name
-                
-                # Add to directories if not already there
-                if full_path not in directories:
-                    directories.append(full_path)
-                
-                # Update stack for next items
-                current_dir_stack.append(dir_name)
-            
-            elif item_name.endswith('.py'):
-                # It's a file
-                # Build full path
-                if current_dir_stack:
-                    full_path = '/'.join(current_dir_stack) + '/' + item_name
-                else:
-                    full_path = item_name
-                
-                files.append(full_path)
+            # REPOMAP seeds directories only. Entries with file extensions are
+            # ignored; names and connector glyphs never create files.
+            if not item_name.endswith('/') and Path(item_name).suffix:
+                continue
+
+            dir_name = item_name.rstrip('/')
+            full_path = (
+                '/'.join(current_dir_stack) + '/' + dir_name
+                if current_dir_stack else dir_name
+            )
+            if full_path not in directories:
+                directories.append(full_path)
+            current_dir_stack.append(dir_name)
         
         return {
             'directories': sorted(set(directories)),  # Remove duplicates and sort
-            'files': sorted(set(files))
+            'files': []
         }
     
     except Exception as e:
@@ -111,7 +95,7 @@ def parse_repomap(filepath: str) -> Dict[str, List[str]]:
 
 def create_blueprint(repomap: Dict[str, List[str]]) -> Tuple[bool, str]:
     """
-    Create directories and placeholder files from REPOMAP.
+    Create directories from REPOMAP. REPOMAP file entries are ignored.
     
     Returns (success: bool, message: str)
     """
@@ -120,33 +104,20 @@ def create_blueprint(repomap: Dict[str, List[str]]) -> Tuple[bool, str]:
     
     created_dirs = []
     skipped_dirs = []
-    created_files = []
-    skipped_files = []
+    project_root = Path.cwd().resolve()
     
     # Create directories
     for dir_path in repomap['directories']:
         try:
-            if not os.path.exists(dir_path):
-                os.makedirs(dir_path, exist_ok=True)
+            full_path = (project_root / dir_path).resolve()
+            full_path.relative_to(project_root)
+            if not full_path.exists():
+                full_path.mkdir(parents=True, exist_ok=True)
                 created_dirs.append(dir_path)
             else:
                 skipped_dirs.append(dir_path)
         except Exception as e:
             return False, f"Failed to create directory {dir_path}: {e}"
-    
-    # Create empty placeholder files
-    for file_path in repomap['files']:
-        try:
-            if not os.path.exists(file_path):
-                # Ensure parent directory exists
-                os.makedirs(os.path.dirname(file_path), exist_ok=True)
-                # Create empty file
-                Path(file_path).touch()
-                created_files.append(file_path)
-            else:
-                skipped_files.append(file_path)
-        except Exception as e:
-            return False, f"Failed to create file {file_path}: {e}"
     
     # Generate success message
     message = f"""
@@ -158,11 +129,7 @@ Created Directories ({len(created_dirs)}):
 Skipped Directories ({len(skipped_dirs)}):
 {chr(10).join(f'  - {d}' for d in skipped_dirs) if skipped_dirs else '  (none)'}
 
-Created Files ({len(created_files)}):
-{chr(10).join(f'  ✓ {f}' for f in created_files) if created_files else '  (none)'}
-
-Skipped Files ({len(skipped_files)}):
-{chr(10).join(f'  - {f}' for f in skipped_files) if skipped_files else '  (none)'}
+REPOMAP file entries: ignored (PSEUDOCODE headers define files)
 """
     
     return True, message
@@ -186,7 +153,7 @@ def main():
         print("FAIL: Could not parse REPOMAP")
         return "fail"
     
-    print(f"Found {len(repomap['directories'])} directories and {len(repomap['files'])} files to create")
+    print(f"Found {len(repomap['directories'])} directories to create")
     
     # Create blueprint
     success, message = create_blueprint(repomap)

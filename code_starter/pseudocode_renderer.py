@@ -32,6 +32,11 @@ from pathlib import Path
 from typing import Dict, List, Tuple, Optional
 import json
 
+try:  # Support both package and direct-script execution.
+    from .blueprint_renderer import create_blueprint, parse_repomap
+except ImportError:  # pragma: no cover - used by `python code_starter/pseudocode_renderer.py`
+    from blueprint_renderer import create_blueprint, parse_repomap
+
 
 class PseudocodeRenderer:
     """Main controller for pseudocode to code conversion."""
@@ -72,21 +77,29 @@ class PseudocodeRenderer:
             with open(self.starterfile, 'r') as f:
                 content = f.read()
             
-            # Extract pseudocode section (after "# PSEUDOCODE")
-            pseudo_match = re.search(r'# PSEUDOCODE\n(.*)', content, re.DOTALL)
+            # Extract pseudocode section (after "# PSEUDOCODE").
+            pseudo_match = re.search(r'^# PSEUDOCODE\s*$', content, re.MULTILINE)
             if not pseudo_match:
                 self.warnings.append("No PSEUDOCODE section found in starterfile.pseudo")
                 return file_pseudocodes
             
-            pseudo_content = pseudo_match.group(1)
-            
-            # Find each file section (e.g., ## filename.py)
-            file_sections = re.finditer(r'## ([\w/\.]+)\n(.*?)(?=\n## |\Z)', pseudo_content, re.DOTALL)
-            
-            for match in file_sections:
-                filename = match.group(1).strip()
-                pseudocode = match.group(2).strip()
-                file_pseudocodes[filename] = pseudocode
+            pseudo_content = content[pseudo_match.end():]
+
+            # Headers are complete project-relative paths. Capture everything
+            # after "## " so names may include hyphens, spaces, and dots.
+            current_path = None
+            body_lines = []
+            for line in pseudo_content.splitlines():
+                header = re.match(r'^##\s+(.+?)\s*$', line)
+                if header:
+                    if current_path is not None:
+                        file_pseudocodes[current_path] = '\n'.join(body_lines).strip()
+                    current_path = header.group(1).strip()
+                    body_lines = []
+                elif current_path is not None:
+                    body_lines.append(line)
+            if current_path is not None:
+                file_pseudocodes[current_path] = '\n'.join(body_lines).strip()
             
             return file_pseudocodes
         
@@ -96,8 +109,7 @@ class PseudocodeRenderer:
     
     def verify_mode_a_setup(self, file_pseudocodes: Dict[str, str]) -> Tuple[bool, List[str]]:
         """
-        Verify that all directories and files from REPOMAP were created
-        and that files are empty (ready for conversion).
+        Verify that every PSEUDOCODE header path exists and is empty.
         
         Returns (all_verified: bool, verification_report: List[str])
         """
@@ -105,10 +117,16 @@ class PseudocodeRenderer:
         all_ok = True
         
         for filepath in file_pseudocodes.keys():
-            full_path = os.path.normpath(filepath)
+            try:
+                full_path = self._resolve_project_path(filepath)
+            except ValueError as e:
+                report.append(f"  ✗ Invalid file path: {filepath} ({e})")
+                self.errors.append(str(e))
+                all_ok = False
+                continue
             
             # Check if file exists
-            if not os.path.exists(full_path):
+            if not full_path.exists():
                 report.append(f"  ✗ File missing: {full_path}")
                 self.errors.append(f"File not created: {full_path}")
                 all_ok = False
@@ -116,7 +134,7 @@ class PseudocodeRenderer:
             
             # Check if file is empty
             try:
-                file_size = os.path.getsize(full_path)
+                file_size = full_path.stat().st_size
                 if file_size > 0:
                     report.append(f"  ✗ File not empty: {full_path} (size: {file_size} bytes)")
                     self.warnings.append(f"File not empty: {full_path} - may already contain code")
@@ -129,6 +147,48 @@ class PseudocodeRenderer:
                 all_ok = False
         
         return all_ok, report
+
+    @staticmethod
+    def _resolve_project_path(filepath: str) -> Path:
+        """Resolve a header path and ensure it stays within the working tree."""
+        path = Path(filepath)
+        if path.is_absolute():
+            raise ValueError(f"PSEUDOCODE path must be project-relative: {filepath}")
+        root = Path.cwd().resolve()
+        resolved = (root / path).resolve()
+        try:
+            resolved.relative_to(root)
+        except ValueError as exc:
+            raise ValueError(f"PSEUDOCODE path escapes project root: {filepath}") from exc
+        return resolved
+
+    def prepare_mode_a_files(self, file_pseudocodes: Dict[str, str]) -> Tuple[bool, List[str]]:
+        """Seed REPOMAP directories, then create missing header-defined files."""
+        report = []
+        repomap = parse_repomap(self.starterfile)
+        # Blueprint creation only seeds directories; REPOMAP file entries have
+        # no effect on which files are created.
+        success, message = create_blueprint(repomap)
+        if not success:
+            self.errors.append(message)
+            return False, [f"  ✗ {message}"]
+
+        for filepath in file_pseudocodes:
+            try:
+                full_path = self._resolve_project_path(filepath)
+                full_path.parent.mkdir(parents=True, exist_ok=True)
+                if full_path.exists():
+                    if not full_path.is_file():
+                        raise ValueError(f"Header path is not a file: {filepath}")
+                    report.append(f"  - Existing file preserved: {filepath}")
+                else:
+                    full_path.touch()
+                    report.append(f"  ✓ Created from PSEUDOCODE header: {filepath}")
+            except (OSError, ValueError) as exc:
+                self.errors.append(f"Could not prepare {filepath}: {exc}")
+                report.append(f"  ✗ Could not prepare {filepath}: {exc}")
+                return False, report
+        return True, report
     
     def run_mode_a(self) -> bool:
         """
@@ -150,22 +210,30 @@ class PseudocodeRenderer:
         
         print(f"  Found {len(file_pseudocodes)} files with pseudocode")
         
-        # Step 2: Verify setup
-        print("\n[Step 2] Verifying project structure...")
+        # Step 2: Seed directories and create files using header paths.
+        print("\n[Step 2] Preparing project structure from REPOMAP and PSEUDOCODE...")
+        prepared, preparation_report = self.prepare_mode_a_files(file_pseudocodes)
+        for line in preparation_report:
+            print(line)
+        if not prepared:
+            return False
+
+        # Step 3: Verify header-defined files.
+        print("\n[Step 3] Verifying PSEUDOCODE files...")
         verified, report = self.verify_mode_a_setup(file_pseudocodes)
         for line in report:
             print(line)
         
-        if not verified and self.errors:
+        if not verified:
             print(f"\n✗ Verification failed. Cannot proceed with code generation.")
             return False
         
-        # Step 3: Convert pseudocode to real code
-        print("\n[Step 3] Converting pseudocode to real code...")
+        # Step 4: Convert pseudocode to real code
+        print("\n[Step 4] Converting pseudocode to real code...")
         self.convert_pseudocodes(file_pseudocodes)
         
-        # Step 4: Cleanup - Delete starterfile.pseudo
-        print("\n[Step 4] Cleanup: Removing starterfile.pseudo...")
+        # Step 5: Cleanup - Delete starterfile.pseudo
+        print("\n[Step 5] Cleanup: Removing starterfile.pseudo...")
         try:
             os.remove(self.starterfile)
             print(f"  ✓ Deleted {self.starterfile}")
