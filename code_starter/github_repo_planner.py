@@ -350,8 +350,6 @@ class GitHubRepoPlanner:
         """Create .gitignore file."""
         content = '''# Virtual environments
 venv/
-        content = '''# Virtual environments
-venv/
 env/
 ENV/
 .venv

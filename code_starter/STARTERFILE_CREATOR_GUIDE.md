@@ -112,8 +112,8 @@ Filename (default: starterfile.pseudo): starterfile.pseudo
 
 ### Medium-term (More Complex)
 4. **Load Existing Structure**
-   - Parse starterfile.pseudo back into the editor
-   - Allow modification and re-saving
+   - Implemented: choose “Load existing starterfile.pseudo” from the creator menu
+   - REPOMAP directories and PSEUDOCODE file sections are restored for editing
 
 5. **Project Templates**
    - Pre-built templates for common project types:

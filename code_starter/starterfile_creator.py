@@ -13,8 +13,14 @@ Features:
 
 import os
 import json
+import re
 from typing import Dict, List, Optional, Tuple
 from collections import OrderedDict
+
+try:
+    from .blueprint_renderer import parse_repomap
+except ImportError:  # Support direct-script execution.
+    from blueprint_renderer import parse_repomap
 
 
 class StarterfileCreator:
@@ -350,15 +356,131 @@ class StarterfileCreator:
             print(f"✗ Error saving: {e}")
     
     def load_from_file(self):
-        """Load existing starterfile.pseudo (placeholder)."""
+        """Load a starterfile and rebuild the editable tree and pseudocode."""
         filename = input("\nFilename to load: ").strip()
         
         if not os.path.exists(filename):
             print(f"File not found: {filename}")
             return
         
-        print("Loading existing files not yet implemented")
-        print("You can manually edit the file or create a new one")
+        try:
+            with open(filename, 'r', encoding='utf-8') as starter:
+                content = starter.read()
+
+            pseudo_match = re.search(
+                r'^# PSEUDOCODE\s*$', content, flags=re.MULTILINE
+            )
+            if not pseudo_match:
+                print("Invalid starterfile: # PSEUDOCODE section is missing")
+                return
+
+            repomap_match = re.search(
+                r'^# REPOMAP\s*$(.*?)(?=^# PSEUDOCODE\s*$|\Z)',
+                content, flags=re.MULTILINE | re.DOTALL
+            )
+            repomap_lines = repomap_match.group(1).splitlines() if repomap_match else []
+            root = None
+            for line in repomap_lines:
+                clean = re.sub(r'^[|\-+`_\s]+', '', line).strip()
+                clean = re.split(r'\s*\(', clean, maxsplit=1)[0].strip().rstrip('/')
+                if clean:
+                    root = clean
+                    break
+
+            sections = {}
+            current_path = None
+            body = []
+            for line in content[pseudo_match.end():].splitlines():
+                header = re.match(r'^##\s+(.+?)\s*$', line)
+                if header:
+                    if current_path is not None:
+                        sections[current_path] = '\n'.join(body).strip()
+                    current_path = header.group(1).strip()
+                    body = []
+                elif current_path is not None:
+                    body.append(line)
+            if current_path is not None:
+                sections[current_path] = '\n'.join(body).strip()
+
+            if not sections:
+                print("Invalid starterfile: no PSEUDOCODE file headers found")
+                return
+
+            # Infer a usable root if the REPOMAP has no root entry.
+            if not root:
+                parents = [os.path.dirname(os.path.normpath(path)) for path in sections]
+                root = os.path.commonpath(parents) or "."
+            root = os.path.normpath(root)
+
+            tree = OrderedDict([(root, {'type': 'dir', 'children': []})])
+
+            def add_directory(directory_path):
+                normalized_dir = os.path.normpath(directory_path)
+                relative_dir = os.path.relpath(normalized_dir, root)
+                if relative_dir == os.pardir or relative_dir.startswith(os.pardir + os.sep):
+                    raise ValueError(
+                        f"Directory path is outside the declared root: {directory_path}"
+                    )
+                parent = root
+                if relative_dir == ".":
+                    return
+                for part in relative_dir.split(os.sep):
+                    child = os.path.join(parent, part)
+                    tree.setdefault(child, {'type': 'dir', 'children': []})
+                    if child not in tree[parent]['children']:
+                        tree[parent]['children'].append(child)
+                    parent = child
+
+            parsed_repomap = parse_repomap(filename) or {'directories': []}
+            for directory in parsed_repomap.get('directories', []):
+                add_directory(directory)
+
+            pseudocodes = {}
+            field_labels = {
+                'INPUT': 'input', 'OUTPUT': 'output', 'TASK': 'task',
+                'TASKS GOAL': 'task', 'CONDITIONS': 'conditions',
+                'PREFERENCES': 'preferences',
+            }
+            for file_path, body_text in sections.items():
+                normalized = os.path.normpath(file_path)
+                try:
+                    relative = os.path.relpath(normalized, root)
+                    if relative == os.pardir or relative.startswith(os.pardir + os.sep):
+                        raise ValueError(f"File path is outside the declared root: {file_path}")
+                except ValueError:
+                    raise ValueError(f"Could not place {file_path} under {root}")
+
+                parts = relative.split(os.sep)
+                directory = os.path.join(root, *parts[:-1]) if len(parts) > 1 else root
+                add_directory(directory)
+                full_file = os.path.join(directory, parts[-1])
+                if full_file not in tree[directory]['children']:
+                    tree[directory]['children'].append(full_file)
+                tree[full_file] = {'type': 'file'}
+
+                fields = {}
+                active_field = 'task'
+                field_lines = {active_field: []}
+                for body_line in body_text.splitlines():
+                    label = re.match(r'^([A-Z][A-Z ]*):\s*(.*)$', body_line)
+                    normalized_label = ' '.join(label.group(1).split()) if label else None
+                    if label and normalized_label in field_labels:
+                        active_field = field_labels[normalized_label]
+                        field_lines.setdefault(active_field, [])
+                        if label.group(2):
+                            field_lines[active_field].append(label.group(2))
+                    else:
+                        field_lines.setdefault(active_field, []).append(body_line)
+                for name, lines in field_lines.items():
+                    fields[name] = '\n'.join(lines).strip()
+                pseudocodes[full_file] = fields
+
+            self.root_dir = root
+            self.tree_structure = tree
+            self.pseudocodes = pseudocodes
+            print(f"✓ Loaded {len(pseudocodes)} file specifications from {filename}")
+        except (OSError, ValueError) as e:
+            print(f"✗ Error loading {filename}: {e}")
     
     def clear_all(self):
         """Clear all data."""

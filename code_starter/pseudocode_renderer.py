@@ -10,14 +10,10 @@ OUTPUT: Converted pseudocode into real code
 
 MODE A (Fresh Project Initialization):
     1. Detect starterfile.pseudo exists
-    2. Extract pseudocode definitions for each file from starterfile.pseudo
-    3. Verification checks:
-       - Verify all directories from REPOMAP were created
-       - Verify all files from REPOMAP were created
-       - Verify all files are empty (ready for code generation)
-    4. Call local LLM to convert pseudocode → real code
-    5. Delete starterfile.pseudo (cleanup)
-    6. Print summary
+    2. Read PSEUDOCODE headers as authoritative file paths
+    3. Seed optional REPOMAP directories and create missing header files
+    4. Convert and validate each generated file
+    5. Delete starterfile.pseudo only after every conversion succeeds
 
 MODE B (Existing Project Development):
     1. Detect starterfile.pseudo does NOT exist
@@ -28,6 +24,9 @@ MODE B (Existing Project Development):
 
 import os
 import re
+import ast
+import stat
+import tempfile
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
 import json
@@ -44,9 +43,9 @@ class PseudocodeRenderer:
     def __init__(self):
         self.starterfile = 'starterfile.pseudo'
         self.mode = None
-        self.converted_files = []
-        self.warnings = []
-        self.errors = []
+        self.converted_files: List[str] = []
+        self.warnings: List[str] = []
+        self.errors: List[str] = []
     
     def detect_mode(self) -> str:
         """
@@ -230,7 +229,12 @@ class PseudocodeRenderer:
         
         # Step 4: Convert pseudocode to real code
         print("\n[Step 4] Converting pseudocode to real code...")
-        self.convert_pseudocodes(file_pseudocodes)
+        if not self.convert_pseudocodes(file_pseudocodes):
+            self.warnings.append(
+                "starterfile.pseudo was kept because one or more files were not generated"
+            )
+            print("\nGeneration incomplete; starterfile.pseudo has been preserved.")
+            return False
         
         # Step 5: Cleanup - Delete starterfile.pseudo
         print("\n[Step 5] Cleanup: Removing starterfile.pseudo...")
@@ -272,7 +276,7 @@ class PseudocodeRenderer:
             with open(filepath, 'r') as f:
                 content = f.read()
             return '"""Pseudo Code"""' in content or "'''Pseudo Code'''" in content
-        except:
+        except (OSError, UnicodeError):
             return False
     
     def extract_pseudocode_from_file(self, filepath: str) -> Optional[str]:
@@ -343,42 +347,80 @@ class PseudocodeRenderer:
                 self.warnings.append(f"Could not extract pseudocode from {filepath}")
         
         if pseudo_dict:
-            self.convert_pseudocodes(pseudo_dict)
-        
+            return self.convert_pseudocodes(pseudo_dict)
         return True
     
     # ==================== Shared: Code Conversion ====================
     
-    def convert_pseudocodes(self, pseudocodes: Dict[str, str]) -> None:
+    def convert_pseudocodes(self, pseudocodes: Dict[str, str]) -> bool:
         """
         Convert pseudocode to real code using local LLM.
         
         Args:
             pseudocodes: Dict mapping file_path -> pseudocode_content
         """
+        successful = True
         for filepath, pseudocode in pseudocodes.items():
             print(f"\n  Converting: {filepath}")
             
             if not pseudocode.strip():
                 self.warnings.append(f"Empty pseudocode for {filepath}")
+                successful = False
                 continue
             
             # Call LLM to convert pseudocode
             real_code = self.call_llm_for_conversion(pseudocode, filepath)
             
             if real_code:
-                # Write converted code to file
                 try:
-                    with open(filepath, 'w') as f:
-                        f.write(real_code)
+                    target = self._resolve_project_path(filepath)
+                    clean_code = self._validate_generated_code(real_code, target)
+                    self._atomic_write(target, clean_code)
                     self.converted_files.append(filepath)
                     print(f"    ✓ Converted and saved")
-                except Exception as e:
+                except (OSError, SyntaxError, ValueError) as e:
                     self.errors.append(f"Failed to write converted code to {filepath}: {e}")
                     print(f"    ✗ Failed to save: {e}")
+                    successful = False
             else:
                 self.errors.append(f"LLM conversion failed for {filepath}")
                 print(f"    ✗ LLM conversion failed")
+                successful = False
+        return successful
+
+    @staticmethod
+    def _validate_generated_code(code: str, target: Path) -> str:
+        """Strip common Markdown fences and validate Python before writing."""
+        code = code.strip()
+        fenced = re.fullmatch(r"```(?:[\w+-]+)?\s*\n(.*?)\n```", code, re.DOTALL)
+        if fenced:
+            code = fenced.group(1).rstrip() + "\n"
+        if target.suffix.lower() in {".py", ".pyi"}:
+            ast.parse(code, filename=str(target))
+        if not code.strip():
+            raise ValueError("generated output is empty")
+        return code if code.endswith("\n") else code + "\n"
+
+    @staticmethod
+    def _atomic_write(target: Path, content: str) -> None:
+        """Replace a generated file atomically, preserving existing permissions."""
+        target.parent.mkdir(parents=True, exist_ok=True)
+        existing_mode = stat.S_IMODE(target.stat().st_mode) if target.exists() else 0o644
+        temporary_path = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w", encoding="utf-8", dir=str(target.parent),
+                prefix=f".{target.name}.", suffix=".tmp", delete=False
+            ) as temporary:
+                temporary_path = Path(temporary.name)
+                temporary.write(content)
+                temporary.flush()
+                os.fsync(temporary.fileno())
+            temporary_path.chmod(existing_mode)
+            os.replace(str(temporary_path), str(target))
+        finally:
+            if temporary_path is not None and temporary_path.exists():
+                temporary_path.unlink()
     
     def call_llm_for_conversion(self, pseudocode: str, filepath: str) -> Optional[str]:
         """

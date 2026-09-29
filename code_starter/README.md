@@ -90,9 +90,9 @@ starterfile_creator.py
         ↓
    starterfile.pseudo
         ↓
-   blueprint_renderer.py
+   REPOMAP directories + PSEUDOCODE header paths
         ↓
-   Directory Structure
+   Directory Structure and header-defined empty files
         ↓
    pseudocode_renderer.py (Mode A)
         ↓
@@ -106,7 +106,7 @@ starterfile_creator.py
 ✅ **Interactive Project Builder** - No manual YAML/JSON needed
 ✅ **Dual-Mode Code Generation** - Fresh projects & existing project enhancement
 ✅ **Local-First** - All processing happens on your machine
-✅ **Non-Destructive** - Never overwrites existing files
+✅ **Safe Generation** - Mode A preserves existing content and keeps the starterfile if generation is incomplete
 ✅ **Modular** - Each tool can be used independently
 ✅ **Zero Dependencies** - Only Python 3.8+ needed (for core tools)
 
@@ -133,15 +133,15 @@ starterfile_creator.py
 
 ## 🐛 Known Issues
 
-- blueprint_renderer tree parsing needs refinement for complex structures
-- pseudocode_renderer LLM integration requires ollama setup
+- REPOMAP seeds directories only; PSEUDOCODE headers define files
+- pseudocode_renderer requires a compatible local Ollama model for generation
 - No GUI version yet (planned)
 
 ## 🔮 Future Enhancements
 
 - [ ] Template system (save/load project templates)
 - [ ] Pre-built project templates (FastAPI, Django, etc.)
-- [ ] Load existing starterfile.pseudo for editing
+- [x] Load existing starterfile.pseudo for editing
 - [ ] GUI version (web or Tkinter)
 - [ ] Filesystem scanner (auto-detect structure)
 - [ ] Better validation and error handling
