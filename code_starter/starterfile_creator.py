@@ -491,6 +491,10 @@ class StarterfileCreator:
             print("✓ All data cleared")
 
 
+# Preserve the public spelling used by code_starter.__init__ and the docs.
+StarterFileCreator = StarterfileCreator
+
+
 def main():
     """Entry point."""
     print("\n" + "="*60)

@@ -93,7 +93,9 @@ def parse_repomap(filepath: str) -> Dict[str, List[str]]:
         return None
 
 
-def create_blueprint(repomap: Dict[str, List[str]]) -> Tuple[bool, str]:
+def create_blueprint(
+    repomap: Dict[str, List[str]], project_root: str = "."
+) -> Tuple[bool, str]:
     """
     Create directories from REPOMAP. REPOMAP file entries are ignored.
     
@@ -104,7 +106,7 @@ def create_blueprint(repomap: Dict[str, List[str]]) -> Tuple[bool, str]:
     
     created_dirs = []
     skipped_dirs = []
-    project_root = Path.cwd().resolve()
+    project_root = Path(project_root).resolve()
     
     # Create directories
     for dir_path in repomap['directories']:
@@ -133,6 +135,32 @@ REPOMAP file entries: ignored (PSEUDOCODE headers define files)
 """
     
     return True, message
+
+
+class BlueprintRenderer:
+    """Small object-oriented wrapper around the REPOMAP directory renderer."""
+
+    def __init__(self, source_file: str = "starterfile.pseudo"):
+        self.source_file = source_file
+        self._repomap = None
+
+    def parse_blueprint(self) -> Dict[str, List[str]]:
+        """Parse REPOMAP and return its directory entries."""
+        self._repomap = parse_repomap(self.source_file)
+        return self._repomap
+
+    def render_blueprint(self, output_dir: str = ".") -> str:
+        """Create REPOMAP directories below output_dir and return its path."""
+        repomap = self._repomap or self.parse_blueprint()
+        root = Path(output_dir).resolve()
+        success, message = create_blueprint(repomap, project_root=str(root))
+        if not success:
+            raise OSError(message)
+        return str(root)
+
+    def get_directory_tree(self) -> Dict[str, List[str]]:
+        """Return the parsed REPOMAP data, parsing it on first use."""
+        return self._repomap or self.parse_blueprint()
 
 
 def main():
