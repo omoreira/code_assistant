@@ -141,8 +141,9 @@ tempfiles/
 temp_*
 *.tmp
 
-# Testing (include tests/ to prevent accidental commits of test artifacts)
-tests/
+# Testing artifacts; keep the code_starter smoke test versioned.
+tests/*
+tests/test_code_starter_smoke.py
 .pytest_cache/
 .coverage
 htmlcov/
