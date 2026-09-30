@@ -17,7 +17,9 @@ NC='\033[0m' # No Color
 
 # Project directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$SCRIPT_DIR"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+export PYTHONPATH="$PROJECT_DIR/src${PYTHONPATH:+:$PYTHONPATH}"
+cd -- "$PROJECT_DIR"
 VENV_DIR="$PROJECT_DIR/venv"
 
 # Functions
@@ -83,8 +85,9 @@ show_menu() {
     echo "  1) code_starter     - Project creation and code generation"
     echo "  2) code_debugger    - Code analysis and debugging (in development)"
     echo "  3) code_patcher     - Code refactoring and patching (in development)"
-    echo "  4) Setup/Status     - Setup environment or check status"
-    echo "  5) Exit             - Exit program"
+    echo "  4) code_refractor   - Refactoring verification and updates"
+    echo "  5) Setup/Status     - Setup environment or check status"
+    echo "  6) Exit             - Exit program"
     echo ""
 }
 
@@ -150,6 +153,11 @@ run_patcher() {
     echo ""
 }
 
+run_refractor() {
+    echo "Starting code_refractor module..."
+    "$PROJECT_DIR/scripts/run_refractor.sh"
+}
+
 main() {
     # Check Python
     check_python
@@ -166,7 +174,7 @@ main() {
         print_header
         show_menu
         
-        read -p "Choose an option (1-5): " choice
+        read -p "Choose an option (1-6): " choice
         
         case $choice in
             1)
@@ -179,9 +187,12 @@ main() {
                 run_patcher
                 ;;
             4)
-                show_status
+                run_refractor
                 ;;
             5)
+                show_status
+                ;;
+            6)
                 print_info "Exiting..."
                 exit 0
                 ;;

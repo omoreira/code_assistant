@@ -72,60 +72,39 @@ Start with the `code_starter` module:
 
 ```bash
 # View available tools
-python -c "from code_starter import starterfile_creator; help(starterfile_creator)"
+   python -c "from code_starter import starterfile_creator; help(starterfile_creator)"
 
 # Run the interactive project creator
-python code_starter/starterfile_creator.py
+   python src/code_starter/starterfile_creator.py
 ```
 
 For detailed documentation, see [docs/code_starter/README.md](docs/code_starter/README.md).
+
+The starter creates the common `docs/`, `scripts/`, `config/`, `ui/`, and
+`src/` layout automatically. Users enter module names under `src/` in the
+REPOMAP; script paths and their pseudocode are defined separately in the
+PSEUDOCODE section.
 
 ## Project Structure
 
 ```
 code_assistant/
-├── code_starter/           # Project starter module
-│   ├── starterfile_creator.py
-│   ├── blueprint_renderer.py
-│   ├── pseudocode_renderer.py
-│   ├── github_repo_planner.py
-│   ├── scripts_writer.py
-│   └── code_documenter.py
-├── code_debugger/          # Debugger module (in development)
-├── code_patcher/           # Patcher module (in development)
-├── code_refractor/         # Refactoring verification module
-│   ├── refactoring_verifier.py
-│   ├── code_refactorer.py
-│   ├── path_resolver.py
-│   └── dependency_mapper.py
-├── shared/                 # Shared utilities
-│   ├── config.py           # Configuration management
-│   ├── logging.py          # Logging utilities
-│   ├── llm.py              # LLM interface
-│   ├── utils.py            # General utilities
-│   └── constants.py        # Project constants
-├── config/                 # Configuration files
-│   ├── defaults.yaml       # Default settings
-│   └── logging_config.yaml # Logging configuration
-├── docs/                   # Documentation
-│   ├── ARCHITECTURE.md     # System architecture
-│   ├── API.md              # API reference
-│   ├── CONTRIBUTING.md     # Contributing guidelines
-│   ├── code_starter/       # Module-specific docs
-│   ├── code_debugger/
-│   ├── code_patcher/
-│   └── code_refractor/
-├── scripts/                # Shell scripts (executable)
-│   ├── setup.sh
-│   ├── install_deps.sh
-│   ├── run_code_assistant.sh
-│   ├── run_starter.sh
-│   ├── run_debugger.sh
-│   └── run_patcher.sh
-├── tests/                  # Test suite (NOTE: Tests are not included in this early development)
-│   ├── unit/               # Unit tests
-│   └── integration/        # Integration tests
-└── setup.py                # Package configuration
+├── docs/                   # Project and module documentation
+├── scripts/                # User-facing shell helpers
+├── config/                 # Runtime and logging configuration
+├── ui/                     # Streamlit or other user interface
+├── src/
+│   ├── code_starter/       # Project creation and code generation
+│   ├── code_debugger/      # Code debugging module
+│   ├── code_patcher/       # Code patching module
+│   ├── code_refractor/     # Refactoring verification module
+│   ├── tools/              # Reusable technical tools
+│   ├── shared/             # Shared Python utilities
+│   ├── db_master_handler/  # Shared database infrastructure
+│   └── assistant_contracts/ # LLM contracts and schemas
+├── tests/                  # Automated tests
+├── setup.py                # Package configuration
+└── pyproject.toml
 ```
 
 ## Documentation

@@ -349,7 +349,7 @@ Which would you prefer:
 
 **A) Update github_repo_planner.py** with your answers and run it
 ```bash
-python code_starter/github_repo_planner.py
+python src/code_starter/github_repo_planner.py
 # It will use your preset answers
 ```
 

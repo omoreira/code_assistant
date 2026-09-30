@@ -14,7 +14,7 @@
 
 ```bash
 # Run the planner
-python code_starter/github_repo_planner.py
+python src/code_starter/github_repo_planner.py
 
 # Select option 1: Answer Implementation Questions
 # Fill out the 10 questions
@@ -115,7 +115,7 @@ Create `shared/` directory for utilities?
 
 ### Option 1: Quick Start (Recommended)
 ```bash
-python code_starter/github_repo_planner.py
+python src/code_starter/github_repo_planner.py
 
 > Select: 4 (Quick Setup)
 > Enter GitHub username: myusername
@@ -130,7 +130,7 @@ python code_starter/github_repo_planner.py
 
 ### Option 2: Detailed Setup
 ```bash
-python code_starter/github_repo_planner.py
+python src/code_starter/github_repo_planner.py
 
 > Select: 1 (Answer Questions)
 > Answer all 10 questions...
@@ -142,7 +142,7 @@ python code_starter/github_repo_planner.py
 
 ### Option 3: Save & Review
 ```bash
-python code_starter/github_repo_planner.py
+python src/code_starter/github_repo_planner.py
 
 > Select: 1 (Answer Questions)
 > Answer all 10 questions...
@@ -154,7 +154,7 @@ python code_starter/github_repo_planner.py
 cat my_repo_config.json
 
 # Run again to generate
-python code_starter/github_repo_planner.py
+python src/code_starter/github_repo_planner.py
 
 > Select: 7 (Load Configuration)
 > Filename: my_repo_config.json

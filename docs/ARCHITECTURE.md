@@ -235,43 +235,22 @@ Each module accesses via shared interface
 
 ```
 code_assistant/
-├── code_starter/           # Project startup module
-│   ├── __init__.py
-│   ├── starterfile_creator.py
-│   ├── blueprint_renderer.py
-│   ├── pseudocode_renderer.py
-│   └── github_repo_planner.py
-├── code_debugger/          # Debugging module
-│   └── __init__.py
-├── code_patcher/           # Patching module
-│   └── __init__.py
-├── shared/                 # Shared utilities
-│   ├── __init__.py
-│   ├── config.py
-│   ├── logging.py
-│   ├── llm.py
-│   ├── utils.py
-│   └── constants.py
-├── config/                 # Configuration files
-│   ├── defaults.yaml
-│   └── logging_config.yaml
-├── docs/                   # Documentation
-│   ├── ARCHITECTURE.md     # This file
-│   ├── API.md
-│   ├── CONTRIBUTING.md
-│   ├── code_starter/
-│   ├── code_debugger/
-│   └── code_patcher/
-├── tests/                  # Test suite
-│   ├── unit/
-│   ├── integration/
-│   └── conftest.py
-├── .gitignore
-├── LICENSE
+├── docs/                    # Project and module documentation
+├── scripts/                 # User-facing shell helpers
+├── config/                  # Runtime and logging configuration
+├── ui/                      # Streamlit or other user interface
+├── src/
+│   ├── code_starter/        # Project creation and code generation
+│   ├── code_debugger/       # Debugging module
+│   ├── code_patcher/        # Patching module
+│   ├── code_refractor/      # Refactoring module
+│   ├── tools/               # Reusable technical tools
+│   ├── shared/              # Shared Python utilities
+│   ├── db_master_handler/   # Shared database infrastructure
+│   └── assistant_contracts/ # LLM contracts and schemas
+├── tests/
 ├── setup.py
 ├── pyproject.toml
-├── requirements.txt
-├── requirements-dev.txt
 └── README.md
 ```
 

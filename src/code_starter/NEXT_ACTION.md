@@ -197,19 +197,19 @@ project-root/
 
 ### For Quick Start:
 ```bash
-python code_starter/github_repo_planner.py
+python src/code_starter/github_repo_planner.py
 # Select 4 → 3 → Done
 ```
 
 ### For Production Ready:
 ```bash
-python code_starter/github_repo_planner.py
+python src/code_starter/github_repo_planner.py
 # Select 1 → Answer all → Select 3 → Done
 ```
 
 ### For Later Review:
 ```bash
-python code_starter/github_repo_planner.py
+python src/code_starter/github_repo_planner.py
 # Select 1 → Answer all → Select 6 (Save)
 # Share repo_config.json with team
 # Later: Select 7 (Load) → Select 3 (Generate)

@@ -24,17 +24,17 @@ install-dev:
 	pip install -e ".[dev]"
 
 test:
-	pytest tests/ -v
+	PYTHONPATH=src pytest tests/ -v
 
 test-cov:
-	pytest tests/ -v --cov=code_starter --cov=code_debugger --cov=code_patcher --cov=shared --cov-report=html --cov-report=term
+	PYTHONPATH=src pytest tests/ -v --cov=code_starter --cov=code_debugger --cov=code_patcher --cov=shared --cov-report=html --cov-report=term
 
 lint:
-	flake8 code_starter code_debugger code_patcher shared tests --max-line-length=88
-	pylint code_starter code_debugger code_patcher shared --disable=R0913,R0914,C0114,C0115,C0116
+	flake8 src/code_starter src/code_debugger src/code_patcher src/code_refractor src/shared src/tools src/db_master_handler src/assistant_contracts tests --max-line-length=88
+	PYTHONPATH=src pylint code_starter code_debugger code_patcher code_refractor shared --disable=R0913,R0914,C0114,C0115,C0116
 
 format:
-	black code_starter code_debugger code_patcher shared tests
+	black src/code_starter src/code_debugger src/code_patcher src/code_refractor src/shared src/tools src/db_master_handler src/assistant_contracts tests
 
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true

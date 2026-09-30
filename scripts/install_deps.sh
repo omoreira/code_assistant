@@ -17,7 +17,9 @@ NC='\033[0m'
 
 # Project directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$SCRIPT_DIR"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+export PYTHONPATH="$PROJECT_DIR/src${PYTHONPATH:+:$PYTHONPATH}"
+cd -- "$PROJECT_DIR"
 VENV_DIR="$PROJECT_DIR/venv"
 
 # Functions

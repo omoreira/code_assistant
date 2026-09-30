@@ -17,7 +17,9 @@ NC='\033[0m'
 
 # Project directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$SCRIPT_DIR"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+export PYTHONPATH="$PROJECT_DIR/src${PYTHONPATH:+:$PYTHONPATH}"
+cd -- "$PROJECT_DIR"
 VENV_DIR="$PROJECT_DIR/venv"
 
 # Functions
@@ -97,7 +99,7 @@ show_status() {
         echo -e "  Dependencies:        ${YELLOW}⚠ Not installed${NC}"
     fi
     
-    if [ -f "$PROJECT_DIR/code_starter" ]; then
+    if [ -d "$PROJECT_DIR/src/code_starter" ]; then
         echo -e "  Code Starter:        ${GREEN}✓ Found${NC}"
     else
         echo -e "  Code Starter:        ${RED}✗ Not found${NC}"

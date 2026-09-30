@@ -1,0 +1,25 @@
+# REPOMAP
+
+code_assistant/
+    docs/
+    scripts/
+    config/
+    ui/
+    src/
+        code_starter/
+        code_debugger/
+        code_patcher/
+        code_refractor/
+        tools/
+        shared/
+        db_master_handler/
+        assistant_contracts/
+
+# PSEUDOCODE
+
+## code_assistant/src/code_starter/example.py
+INPUT: a concise description of the script's inputs
+OUTPUT: the result produced by the script
+TASK: describe the script's responsibilities and main steps
+CONDITIONS: list constraints or error cases the implementation must handle
+PREFERENCES: list implementation preferences when relevant

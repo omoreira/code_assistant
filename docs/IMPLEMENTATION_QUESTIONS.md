@@ -107,7 +107,7 @@ pip install -e .
 
 Option B (Scripts):
 ```bash
-python code_starter/starterfile_creator.py
+python src/code_starter/starterfile_creator.py
 ```
 
 Option C (Command Line):

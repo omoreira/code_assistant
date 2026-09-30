@@ -4,8 +4,9 @@ starterfile_creator.py
 Interactive tool to create starterfile.pseudo with REPOMAP and PSEUDOCODE sections.
 
 Features:
-- Build directory tree interactively
-- Create pseudocode definitions for each file
+- Seed the standard repository layout
+- Add module names beneath src/
+- Create pseudocode definitions for scripts separately from the REPOMAP
 - Validate structure
 - Preview formatted output
 - Save to starterfile.pseudo
@@ -16,6 +17,19 @@ import json
 import re
 from typing import Dict, List, Optional, Tuple
 from collections import OrderedDict
+
+
+BASE_DIRECTORIES = (
+    "docs",
+    "scripts",
+    "config",
+    "ui",
+    "src",
+    "src/tools",
+    "src/shared",
+    "src/db_master_handler",
+    "src/assistant_contracts",
+)
 
 try:
     from .blueprint_renderer import parse_repomap
@@ -38,33 +52,39 @@ class StarterfileCreator:
             print("\n" + "="*60)
             print("STARTERFILE CREATOR - Main Menu")
             print("="*60)
-            print("1. Create new project structure")
-            print("2. View current structure")
-            print("3. Add/Edit pseudocode for files")
-            print("4. Preview starterfile.pseudo")
-            print("5. Save to starterfile.pseudo")
-            print("6. Load existing starterfile.pseudo")
-            print("7. Clear all")
-            print("8. Exit")
+            print("1. Create standard project structure")
+            print("2. Add a module under src/")
+            print("3. Add a script pseudocode section to a module")
+            print("4. View current structure")
+            print("5. Add/Edit pseudocode for files")
+            print("6. Preview starterfile.pseudo")
+            print("7. Save to starterfile.pseudo")
+            print("8. Load existing starterfile.pseudo")
+            print("9. Clear all")
+            print("10. Exit")
             print("-"*60)
             
-            choice = input("Select option (1-8): ").strip()
+            choice = input("Select option (1-10): ").strip()
             
             if choice == '1':
                 self.create_project_structure()
             elif choice == '2':
-                self.view_structure()
+                self.add_module()
             elif choice == '3':
-                self.manage_pseudocodes()
+                self.add_module_script()
             elif choice == '4':
-                self.preview_output()
+                self.view_structure()
             elif choice == '5':
-                self.save_to_file()
+                self.manage_pseudocodes()
             elif choice == '6':
-                self.load_from_file()
+                self.preview_output()
             elif choice == '7':
-                self.clear_all()
+                self.save_to_file()
             elif choice == '8':
+                self.load_from_file()
+            elif choice == '9':
+                self.clear_all()
+            elif choice == '10':
                 print("\nGoodbye!")
                 break
             else:
@@ -73,7 +93,7 @@ class StarterfileCreator:
     # ==================== PROJECT STRUCTURE ====================
     
     def create_project_structure(self):
-        """Interactively build project directory structure."""
+        """Seed the standard repository structure and collect module names."""
         print("\n" + "="*60)
         print("CREATE PROJECT STRUCTURE")
         print("="*60)
@@ -82,70 +102,90 @@ class StarterfileCreator:
         while True:
             root = input("\nEnter root directory (e.g., ./my_project): ").strip()
             if root:
-                self.root_dir = root
+                self.root_dir = root.rstrip("/\\") or root
+                root = self.root_dir
                 self.tree_structure = {root: {'type': 'dir', 'children': []}}
+                self.pseudocodes = {}
                 print(f"Root directory set: {root}")
                 break
-        
-        # Build tree
-        self.build_tree_interactive(root)
-    
-    def build_tree_interactive(self, parent_path: str, level: int = 0):
-        """Interactively add items to tree."""
-        while True:
-            print(f"\n[{parent_path}]")
-            print("1. Add directory")
-            print("2. Add file")
-            print("3. Go to parent")
-            print("4. Done")
-            
-            choice = input("Select (1-4): ").strip()
-            
-            if choice == '1':
-                dir_name = input("Directory name: ").strip()
-                if dir_name:
-                    self.add_directory(parent_path, dir_name)
-                    new_path = f"{parent_path}/{dir_name}"
-                    # Ask if user wants to add items inside
-                    if input(f"Add items to {new_path}? (y/n): ").strip().lower() == 'y':
-                        self.build_tree_interactive(new_path, level + 1)
-            
-            elif choice == '2':
-                filename = input("Filename (with extension): ").strip()
-                if filename:
-                    self.add_file(parent_path, filename)
-            
-            elif choice == '3':
-                if level > 0:
-                    break
-                else:
-                    print("Cannot go above root")
-            
-            elif choice == '4':
-                break
-            
-            else:
-                print("Invalid option")
-    
-    def add_directory(self, parent: str, dir_name: str):
-        """Add directory to tree."""
-        if parent not in self.tree_structure:
-            self.tree_structure[parent] = {'type': 'dir', 'children': []}
-        
-        new_path = f"{parent}/{dir_name}"
-        self.tree_structure[parent]['children'].append(new_path)
-        self.tree_structure[new_path] = {'type': 'dir', 'children': []}
-        print(f"✓ Added directory: {new_path}")
-    
-    def add_file(self, parent: str, filename: str):
-        """Add file to tree."""
-        if parent not in self.tree_structure:
-            self.tree_structure[parent] = {'type': 'dir', 'children': []}
-        
-        new_path = f"{parent}/{filename}"
-        self.tree_structure[parent]['children'].append(new_path)
-        self.tree_structure[new_path] = {'type': 'file'}
-        print(f"✓ Added file: {new_path}")
+
+        for directory in BASE_DIRECTORIES:
+            self._ensure_project_directory(directory)
+        module_names = input(
+            "Module names under src/ (comma-separated, e.g. code_starter, code_debugger): "
+        )
+        for module in (name.strip() for name in module_names.split(",")):
+            if module:
+                try:
+                    self._ensure_module(module)
+                except ValueError as exc:
+                    print(exc)
+        print("Standard layout added. REPOMAP contains directory and module names only.")
+        print("Script paths and pseudocode are separate PSEUDOCODE entries.")
+
+    def _ensure_project_directory(self, relative_path: str) -> str:
+        """Add a project-relative directory and its parents to the tree."""
+        if not self.root_dir:
+            raise ValueError("Create the standard project structure first")
+        normalized = os.path.normpath(relative_path)
+        if os.path.isabs(normalized) or normalized == os.pardir or normalized.startswith(os.pardir + os.sep):
+            raise ValueError("Project paths must stay inside the project root")
+        parent = self.root_dir
+        current = self.root_dir
+        if normalized == ".":
+            return current
+        for part in normalized.split(os.sep):
+            current = os.path.join(current, part)
+            if current not in self.tree_structure:
+                self.tree_structure[current] = {'type': 'dir', 'children': []}
+            if current not in self.tree_structure[parent]['children']:
+                self.tree_structure[parent]['children'].append(current)
+            parent = current
+        return current
+
+    def add_module(self):
+        """Add a named module directory beneath src/."""
+        if not self.root_dir:
+            print("Create the standard project structure first")
+            return
+        module = input("Module name (for example, code_search): ").strip()
+        if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", module):
+            print("Module names must be Python-style identifiers")
+            return
+        path = self._ensure_module(module)
+        print(f"✓ Module added: {path}")
+
+    def _ensure_module(self, module: str) -> str:
+        """Validate and add one module directory beneath src/."""
+        if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", module):
+            raise ValueError(f"Invalid module name: {module}")
+        return self._ensure_project_directory(os.path.join("src", module))
+
+    def add_module_script(self):
+        """Add a Python script under a module and collect its pseudocode."""
+        if not self.root_dir:
+            print("Create the standard project structure first")
+            return
+        module = input("Module name under src/ (for example, code_starter): ").strip()
+        try:
+            module_dir = self._ensure_module(module)
+        except ValueError as exc:
+            print(exc)
+            return
+        filename = input("Script filename (for example, analyze.py): ").strip()
+        relative_file = os.path.normpath(filename)
+        if (not filename or os.path.isabs(relative_file)
+                or relative_file == os.pardir
+                or relative_file.startswith(os.pardir + os.sep)
+                or os.pardir in relative_file.split(os.sep)
+                or not relative_file.endswith(".py")):
+            print("Enter a project-relative Python filename inside the module")
+            return
+
+        full_file = os.path.join(module_dir, relative_file)
+        self.pseudocodes.setdefault(full_file, {})
+        print(f"✓ PSEUDOCODE entry added: {full_file}")
+        self.edit_pseudocode(full_file)
     
     def view_structure(self):
         """Display the current tree structure."""
@@ -254,14 +294,8 @@ class StarterfileCreator:
         print(f"\n✓ Pseudocode saved for {filepath}")
     
     def get_all_files(self) -> List[str]:
-        """Get list of all files in the tree."""
-        files = []
-        
-        for path, node in self.tree_structure.items():
-            if node.get('type') == 'file':
-                files.append(path)
-        
-        return sorted(files)
+        """Get script paths described in PSEUDOCODE sections."""
+        return sorted(self.pseudocodes)
     
     # ==================== OUTPUT & PREVIEW ====================
     
@@ -284,7 +318,7 @@ class StarterfileCreator:
         lines.append("# REPOMAP\n")
         if self.root_dir:
             lines.append(self.root_dir)
-            self._generate_repomap(self.root_dir, "", lines, is_last=True)
+            self._generate_repomap(self.root_dir, "    ", lines, is_last=True)
         
         lines.append("\n\n")
         
@@ -311,28 +345,14 @@ class StarterfileCreator:
         for i, child in enumerate(children):
             is_last_child = (i == len(children) - 1)
             node_type = self.tree_structure[child].get('type', 'unknown')
-            child_name = child.split('/')[-1]
-            
-            # Build tree characters
-            if is_last_child:
-                tree_chars = "        |______ "
-                extension = "                        "
-            else:
-                tree_chars = "        |______ "
-                extension = "        |               "
-            
-            # Add node type indicator
-            if node_type == 'dir':
-                child_name += "/"
-            
-            lines.append(f"{tree_chars}{child_name}")
-            
-            # Recursively add children
+            if node_type != 'dir':
+                continue
+            child_name = os.path.basename(child)
+            child_name += "/"
+            lines.append(f"{prefix}{child_name}")
             sub_children = self.tree_structure.get(child, {}).get('children', [])
             if sub_children:
-                # Adjust prefix for tree visualization
-                new_prefix = extension if not is_last_child else "                        "
-                self._generate_repomap(child, new_prefix, lines, is_last_child)
+                self._generate_repomap(child, prefix + "    ", lines, is_last_child)
     
     # ==================== FILE I/O ====================
     
@@ -450,13 +470,7 @@ class StarterfileCreator:
                 except ValueError:
                     raise ValueError(f"Could not place {file_path} under {root}")
 
-                parts = relative.split(os.sep)
-                directory = os.path.join(root, *parts[:-1]) if len(parts) > 1 else root
-                add_directory(directory)
-                full_file = os.path.join(directory, parts[-1])
-                if full_file not in tree[directory]['children']:
-                    tree[directory]['children'].append(full_file)
-                tree[full_file] = {'type': 'file'}
+                full_file = os.path.normpath(file_path)
 
                 fields = {}
                 active_field = 'task'

@@ -65,16 +65,22 @@ python pseudocode_renderer.py
 ```
 # REPOMAP
 
-./project_name
-        |___________src/
-        |               |______main.py
-        |               |______utils.py
-        |___________tests/
-                        |______ test_main.py
+project_name/
+    docs/
+    scripts/
+    config/
+    ui/
+    src/
+        module_one/
+        module_two/
+        tools/
+        shared/
+        db_master_handler/
+        assistant_contracts/
 
 # PSEUDOCODE
 
-## ./project_name/src/main.py
+## project_name/src/module_one/main.py
 
 INPUT: Configuration object
 OUTPUT: Application instance
@@ -90,7 +96,7 @@ starterfile_creator.py
         ↓
    starterfile.pseudo
         ↓
-   REPOMAP directories + PSEUDOCODE header paths
+   Standard directories and user-named modules + PSEUDOCODE header paths
         ↓
    Directory Structure and header-defined empty files
         ↓
@@ -103,7 +109,8 @@ starterfile_creator.py
 
 ## 💡 Features
 
-✅ **Interactive Project Builder** - No manual YAML/JSON needed
+✅ **Standard Project Builder** - Creates the common root and src layout automatically
+✅ **Module-first REPOMAP** - Users enter module names; script paths stay in PSEUDOCODE
 ✅ **Dual-Mode Code Generation** - Fresh projects & existing project enhancement
 ✅ **Local-First** - All processing happens on your machine
 ✅ **Safe Generation** - Mode A preserves existing content and keeps the starterfile if generation is incomplete

@@ -175,7 +175,7 @@ The planner can now be customized to use your specific answers instead of asking
 
 ### Step 2: Run the Updated Planner
 ```bash
-python code_starter/github_repo_planner.py
+python src/code_starter/github_repo_planner.py
 ```
 
 ### Step 3: Review Generated Files
