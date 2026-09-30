@@ -19,6 +19,14 @@ from typing import Dict, List, Optional, Tuple
 from datetime import datetime
 
 
+STANDARD_MODULES = (
+    "code_starter",
+    "code_debugger",
+    "code_patcher",
+    "code_refractor",
+)
+
+
 class GitHubRepoPlanner:
     """Interactive GitHub repository structure planner."""
     
@@ -93,9 +101,9 @@ class GitHubRepoPlanner:
         
         # Q1: Module Structure
         print("\n[Q1] Module Structure")
-        print("How should the 3 modules be organized?")
-        print("  A) Separate repositories (code-starter, code-analyzer, code-executor)")
-        print("  B) Single mono-repo with 3 subdirectories (RECOMMENDED)")
+        print("Use the standard src-based monorepo layout for the four system modules?")
+        print("  A) Yes (RECOMMENDED)")
+        print("  B) No, record a different plan")
         print("  C) Main repo + submodules")
         self.config['module_structure'] = self._get_choice("A/B/C", ["A", "B", "C"], "B")
         self.decisions.append(f"Module Structure: Option {self.config['module_structure']}")
@@ -119,7 +127,7 @@ class GitHubRepoPlanner:
         
         # Q4: Module Placeholders
         print("\n[Q4] Module Placeholders")
-        print("Create placeholder files for code_analyzer and code_executor?")
+        print("Create package placeholders for all four modules under src/?")
         self.config['module_placeholders'] = self._get_yes_no("Yes/No", True)
         self.decisions.append(f"Module Placeholders: {'Yes' if self.config['module_placeholders'] else 'No'}")
         
@@ -138,11 +146,11 @@ class GitHubRepoPlanner:
         # Q6: Documentation Location
         print("\n[Q6] Documentation Structure")
         print("Where should module documentation live?")
-        print("  1) Each module: code_starter/docs/, code_analyzer/docs/ (RECOMMENDED)")
-        print("  2) Root: docs/code_starter/, docs/code_analyzer/")
-        print("  3) Move existing docs to code_starter/docs/")
+        print("  1) Root docs/<module>/ (RECOMMENDED)")
+        print("  2) Inside each src/<module>/ package")
+        print("  3) Keep existing documentation locations")
         choice = self._get_choice("1/2/3", ["1", "2", "3"], "1")
-        doc_map = {"1": "per-module", "2": "root", "3": "move-existing"}
+        doc_map = {"1": "root", "2": "per-module", "3": "keep-existing"}
         self.config['documentation_location'] = doc_map[choice]
         self.decisions.append(f"Documentation: {self.config['documentation_location']}")
         
@@ -156,7 +164,7 @@ class GitHubRepoPlanner:
         print("\n[Q8] Installation Method")
         print("How should users install the package?")
         print("  A) pip install -e . (Python package, RECOMMENDED)")
-        print("  B) python code_starter/starterfile_creator.py (Direct scripts)")
+        print("  B) python src/code_starter/starterfile_creator.py (Direct script)")
         print("  C) Command line tools after pip install (Advanced)")
         self.config['installation_method'] = self._get_choice("A/B/C", ["A", "B", "C"], "A")
         self.decisions.append(f"Installation: Option {self.config['installation_method']}")
@@ -299,6 +307,9 @@ class GitHubRepoPlanner:
         
         # Critical files
         try:
+            self._create_standard_directories()
+            files_created.append("✓ Standard docs/scripts/config/ui/src layout")
+
             self._create_gitignore()
             files_created.append("✓ .gitignore")
             
@@ -345,6 +356,16 @@ class GitHubRepoPlanner:
             
         except Exception as e:
             print(f"\n✗ Error generating structure: {e}")
+
+    def _create_standard_directories(self):
+        """Create the repository's fixed root and src layout."""
+        directories = [
+            "docs", "scripts", "config", "ui", "src", "src/tools",
+            "src/shared", "src/db_master_handler", "src/assistant_contracts",
+        ]
+        directories.extend(os.path.join("src", module) for module in STANDARD_MODULES)
+        for directory in directories:
+            os.makedirs(directory, exist_ok=True)
     
     def _create_gitignore(self):
         """Create .gitignore file."""
@@ -428,11 +449,12 @@ SOFTWARE.
 setup(
     name="{self.config['github_repo_name']}",
     version="0.1.0",
-    description="Local AI-powered coding assistant with 3 modules",
+    description="Local AI-powered coding assistant with four modules",
     author="{self.config['author_name']}",
     author_email="{self.config['author_email']}",
     url="https://github.com/{self.config['github_username']}/{self.config['github_repo_name']}",
-    packages=find_packages(),
+    package_dir={{"": "src"}},
+    packages=find_packages(where="src"),
     python_requires=">=3.8",
     install_requires=[
         # Add dependencies here as needed
@@ -501,15 +523,15 @@ ipython>=7.0
     
     def _create_root_readme(self):
         """Create root README.md."""
+        module_list = "\n".join(f"- **{name}**" for name in STANDARD_MODULES)
+        module_tree = "\n".join(f"    ├── {name}/" for name in STANDARD_MODULES)
         content = f'''# Code Assistant
 
-A local, AI-powered coding assistant with 3 integrated modules for specification, analysis, and execution.
+A local, AI-powered coding assistant with four system modules.
 
 ## Modules
 
-- **code_starter** - Create project specifications and generate project skeletons from pseudocode
-- **code_analyzer** - Analyze code and provide insights (coming soon)
-- **code_executor** - Execute and test generated code (coming soon)
+{module_list}
 
 ## Quick Start
 
@@ -542,9 +564,10 @@ This will guide you through:
 
 - [Architecture](docs/ARCHITECTURE.md)
 - **Module Docs:**
-  - [code_starter](code_starter/docs/README.md)
-  - [code_analyzer](code_analyzer/docs/README.md) (coming soon)
-  - [code_executor](code_executor/docs/README.md) (coming soon)
+  - [code_starter](docs/code_starter/README.md)
+  - [code_debugger](docs/code_debugger/README.md)
+  - [code_patcher](docs/code_patcher/README.md)
+  - [code_refractor](docs/code_refractor/README.md)
 
 ## Installation Options
 
@@ -556,12 +579,28 @@ python -m code_starter.starterfile_creator
 
 ### Option B: Direct Scripts
 ```bash
-python code_starter/starterfile_creator.py
+python src/code_starter/starterfile_creator.py
 ```
 
 ### Option C: CLI Commands (After full setup)
 ```bash
 code-assistant-start
+```
+
+## Project Structure
+
+```
+{self.config['github_repo_name']}/
+├── docs/
+├── scripts/
+├── config/
+├── ui/
+└── src/
+{module_tree}
+    ├── tools/
+    ├── shared/
+    ├── db_master_handler/
+    └── assistant_contracts/
 ```
 
 ## Development
@@ -625,7 +664,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md)
 PROJECT_NAME = "code-assistant"
 
 # Modules
-MODULES = ["code_starter", "code_analyzer", "code_executor"]
+MODULES = ["code_starter", "code_debugger", "code_patcher", "code_refractor"]
 
 # LLM Configuration
 LLM_MODEL = "deepseek-coder:6.7b"
@@ -640,20 +679,12 @@ LOG_LEVEL = "INFO"
     
     def _create_module_placeholders(self):
         """Create placeholder modules."""
-        for module_name in ['code_analyzer', 'code_executor']:
-            os.makedirs(f'{module_name}/docs', exist_ok=True)
-            
+        for module_name in STANDARD_MODULES:
+            module_dir = os.path.join("src", module_name)
+            os.makedirs(module_dir, exist_ok=True)
             # __init__.py
-            with open(f'{module_name}/__init__.py', 'w') as f:
+            with open(os.path.join(module_dir, '__init__.py'), 'w') as f:
                 f.write(f'"""The {module_name} module."""\n')
-            
-            # Main module file
-            with open(f'{module_name}/{module_name.split("_")[1]}.py', 'w') as f:
-                f.write(f'"""{module_name} module.\n\nComing soon...\n"""')
-            
-            # docs/README.md
-            with open(f'{module_name}/docs/README.md', 'w') as f:
-                f.write(f'# {module_name.replace("_", " ").title()}\n\nComing soon...\n')
     
     def _create_test_structure(self):
         """Create tests directory."""
@@ -667,12 +698,13 @@ LOG_LEVEL = "INFO"
     
     def _create_shared_utilities(self):
         """Create shared utilities directory."""
-        os.makedirs('shared', exist_ok=True)
+        shared_dir = os.path.join('src', 'shared')
+        os.makedirs(shared_dir, exist_ok=True)
         
-        with open('shared/__init__.py', 'w') as f:
+        with open(os.path.join(shared_dir, '__init__.py'), 'w') as f:
             f.write('"""Shared utilities across modules."""\n')
         
-        with open('shared/config.py', 'w') as f:
+        with open(os.path.join(shared_dir, 'config.py'), 'w') as f:
             f.write('''"""Shared configuration utilities."""
 
 def load_config(config_file):
@@ -680,7 +712,7 @@ def load_config(config_file):
     pass
 ''')
         
-        with open('shared/utils.py', 'w') as f:
+        with open(os.path.join(shared_dir, 'utils.py'), 'w') as f:
             f.write('''"""Shared utility functions."""
 
 def format_output(content):

@@ -89,6 +89,10 @@ class StarterfileCreator:
                 break
             else:
                 print("Invalid option. Try again.")
+
+    def run_interactive(self):
+        """Public launcher method used by the CLI scripts and package API."""
+        return self.main_menu()
     
     # ==================== PROJECT STRUCTURE ====================
     

@@ -45,6 +45,11 @@ class CodeDocumenter:
             Path to created file
         """
         modules_text = "\n".join([f"- **{mod}**: " for mod in modules])
+        module_commands = "\n".join(
+            f"./scripts/run_{mod[5:] if mod.startswith('code_') else mod}.sh"
+            for mod in modules
+        )
+        module_tree = "\n".join(f"│   ├── {mod}/" for mod in modules)
 
         readme_content = f'''# {project_name}
 
@@ -103,9 +108,7 @@ See the `docs/` directory for detailed documentation:
 
 ### Running Specific Module
 ```bash
-./scripts/run_starter.sh
-./scripts/run_debugger.sh
-./scripts/run_patcher.sh
+{module_commands}
 ```
 
 ## Development
@@ -138,17 +141,20 @@ pip install -r requirements-dev.txt
 
 ```
 {project_name.lower().replace(' ', '_')}/
-├── scripts/                  # Shell scripts for running modules
-├── docs/                     # Documentation
-├── code_starter/            # Starter module
-├── code_debugger/           # Debugger module
-├── code_patcher/            # Patcher module
-├── shared/                  # Shared utilities
-├── tests/                   # Test suite
+├── docs/                    # Documentation
+├── scripts/                 # User-facing shell helpers
 ├── config/                  # Configuration files
+├── ui/                      # User interface
+├── src/
+{module_tree}
+│   ├── tools/
+│   ├── shared/
+│   ├── db_master_handler/
+│   └── assistant_contracts/
+├── tests/                   # Test suite
 ├── setup.py                 # Package setup
 ├── requirements.txt         # Dependencies
-└── README.md               # This file
+└── README.md                # This file
 ```
 
 ## Configuration
@@ -195,6 +201,7 @@ See `CHANGELOG.md` for version history and release notes.
         modules_section = "\n".join(
             [f"- **{mod}**: {mod.capitalize()} module" for mod in modules]
         )
+        module_tree = "\n".join(f"    ├── {mod}/" for mod in modules)
 
         architecture_content = f'''# Architecture
 
@@ -233,18 +240,17 @@ This project follows a modular architecture with shared utilities.
 
 ```
 project/
-├── scripts/              # Shell scripts for execution
-│   ├── setup.sh
-│   ├── run_starter.sh
-│   ├── run_debugger.sh
-│   └── run_patcher.sh
-├── docs/                # Documentation
-├── code_starter/        # Project creation module
-├── code_debugger/       # Debugging module
-├── code_patcher/        # Patching module
-├── shared/              # Shared utilities
-├── config/              # Configuration files
-└── tests/               # Test suite
+├── docs/                    # Documentation
+├── scripts/                 # User-facing shell helpers
+├── config/                  # Configuration files
+├── ui/                      # User interface
+├── src/
+{module_tree}
+│   ├── tools/
+│   ├── shared/
+│   ├── db_master_handler/
+│   └── assistant_contracts/
+└── tests/                   # Test suite
 ```
 
 ## Data Flow
@@ -325,7 +331,7 @@ Complete API reference for all modules.
 
 ## Shared Utilities
 
-### Configuration (shared/config.py)
+### Configuration (src/shared/config.py)
 
 ```python
 from shared.config import load_config, get_config
@@ -337,7 +343,7 @@ config = load_config('config/defaults.yaml')
 value = get_config('key.subkey', default='default_value')
 ```
 
-### Logging (shared/logging.py)
+### Logging (src/shared/logging.py)
 
 ```python
 from shared.logging import get_logger, setup_logging
@@ -350,7 +356,7 @@ logger = get_logger(__name__)
 logger.info("Message")
 ```
 
-### Utilities (shared/utils.py)
+### Utilities (src/shared/utils.py)
 
 ```python
 from shared.utils import read_file, write_file, ensure_directory

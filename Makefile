@@ -27,7 +27,7 @@ test:
 	PYTHONPATH=src pytest tests/ -v
 
 test-cov:
-	PYTHONPATH=src pytest tests/ -v --cov=code_starter --cov=code_debugger --cov=code_patcher --cov=shared --cov-report=html --cov-report=term
+	PYTHONPATH=src pytest tests/ -v --cov=code_starter --cov=code_debugger --cov=code_patcher --cov=code_refractor --cov=shared --cov-report=html --cov-report=term
 
 lint:
 	flake8 src/code_starter src/code_debugger src/code_patcher src/code_refractor src/shared src/tools src/db_master_handler src/assistant_contracts tests --max-line-length=88

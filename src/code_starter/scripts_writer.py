@@ -59,6 +59,8 @@ NC='\\033[0m'
 # Project directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+export PYTHONPATH="$PROJECT_DIR/src${PYTHONPATH:+:$PYTHONPATH}"
+cd -- "$PROJECT_DIR"
 VENV_DIR="$PROJECT_DIR/venv"
 
 # Functions
@@ -270,6 +272,8 @@ NC='\\033[0m'
 # Project directory
 SCRIPT_DIR="$(cd "$(dirname "${{BASH_SOURCE[0]}}")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+export PYTHONPATH="$PROJECT_DIR/src${{PYTHONPATH:+:$PYTHONPATH}}"
+cd -- "$PROJECT_DIR"
 VENV_DIR="$PROJECT_DIR/venv"
 
 # Functions
@@ -385,13 +389,13 @@ main "$@"
         """Generate all standard scripts.
 
         Args:
-            modules: List of module names (default: starter, debugger, patcher)
+            modules: List of module names (default: starter, debugger, patcher, refractor)
 
         Returns:
             Dictionary mapping script names to their paths
         """
         if modules is None:
-            modules = ["starter", "debugger", "patcher"]
+            modules = ["starter", "debugger", "patcher", "refractor"]
 
         # Create scripts directory
         self.create_scripts_directory()
