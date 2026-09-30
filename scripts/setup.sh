@@ -135,6 +135,23 @@ install_package() {
     print_success "code-assistant installed in development mode"
 }
 
+generate_sql_schemas() {
+    # Schema creation is opt-in so ordinary development setup does not need a
+    # project-specific starterfile. Set CREATE_SQLITE_SCHEMAS=1 to include it.
+    if [ "${CREATE_SQLITE_SCHEMAS:-0}" != "1" ]; then
+        return 0
+    fi
+
+    if [ ! -f "$PROJECT_DIR/starterfile.pseudo" ]; then
+        print_error "starterfile.pseudo not found; cannot generate SQLite schemas"
+        return 1
+    fi
+
+    print_info "Generating SQLite schemas from starterfile.pseudo..."
+    python3 -m code_starter.sql_schema_creator \
+        "$PROJECT_DIR/starterfile.pseudo" --project-root "$PROJECT_DIR"
+}
+
 verify_installation() {
     print_info "Verifying installation..."
     
@@ -202,6 +219,7 @@ main() {
     install_requirements
     install_dev_requirements
     install_package
+    generate_sql_schemas
     
     echo ""
     if verify_installation; then

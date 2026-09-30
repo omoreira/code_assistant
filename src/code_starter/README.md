@@ -37,6 +37,45 @@ Converts pseudocode into real, working code using your local LLM.
 
 **Usage**: `python pseudocode_renderer.py`
 
+### 4. `sql_schema_creator.py`
+Reads a `# DATABASES` section in `starterfile.pseudo` and writes one SQLite
+schema file per database under `src/db_master_handler/sqlite_schema/`.
+Tables must define an `identifier` column; it becomes `TEXT PRIMARY KEY NOT
+NULL`. Other listed columns default to `TEXT`.
+
+```text
+# DATABASES
+newlane_course_projects.db
+table 1 name: project
+table 1 columns:
+- identifier: student initials + submission date + instructor initials + claimed date + course
+- student_name: submitting student
+table 2 name: evaluations
+table 2 columns:
+- identifier: same identifier as project
+- evaluation: evaluation data
+```
+
+Run the generator from the project root:
+
+```bash
+PYTHONPATH=src python -m code_starter.sql_schema_creator starterfile.pseudo
+```
+
+Create an empty database at any chosen location, or initialize it from a
+generated schema:
+
+```bash
+./scripts/create_sqlite_db.sh ./data/newlane_course_projects.db
+./scripts/create_sqlite_db.sh ./data/newlane_course_projects.db \
+  ./src/db_master_handler/sqlite_schema/newlane_course_projects.db.sql
+```
+
+The helper refuses to overwrite an existing path. Schema generation and
+database creation are standalone steps. To also generate schema files during
+repository setup, set `CREATE_SQLITE_SCHEMAS=1` when running `scripts/setup.sh`;
+the repository must contain a `starterfile.pseudo` with a `# DATABASES` section.
+
 ## 🚀 Quick Start
 
 ### Step 1: Create Your Project Definition

@@ -44,6 +44,7 @@ class StarterfileCreator:
         self.root_dir = None
         self.tree_structure = OrderedDict()  # {path: {'type': 'dir'|'file', 'children': [], ...}}
         self.pseudocodes = {}  # {filepath: {'input': '', 'output': '', 'task': '', ...}}
+        self.database_section = ""  # Preserve optional # DATABASES content on load/save.
         self.current_path = []  # Track current position in tree
     
     def main_menu(self):
@@ -110,6 +111,7 @@ class StarterfileCreator:
                 root = self.root_dir
                 self.tree_structure = {root: {'type': 'dir', 'children': []}}
                 self.pseudocodes = {}
+                self.database_section = ""
                 print(f"Root directory set: {root}")
                 break
 
@@ -339,7 +341,11 @@ class StarterfileCreator:
                 if pseudo.get(field):
                     lines.append(f"{field.upper()}: {pseudo[field]}")
                     lines.append("")
-        
+
+        if self.database_section.strip():
+            lines.append("\n")
+            lines.append(self.database_section.strip())
+
         return '\n'.join(lines)
     
     def _generate_repomap(self, node: str, prefix: str, lines: List[str], is_last: bool):
@@ -397,6 +403,15 @@ class StarterfileCreator:
             if not pseudo_match:
                 print("Invalid starterfile: # PSEUDOCODE section is missing")
                 return
+
+            databases_match = re.search(
+                r'^#\s*DATABASES\s*$(.*?)(?=^#\s+\w|\Z)',
+                content, flags=re.MULTILINE | re.DOTALL | re.IGNORECASE
+            )
+            database_section = (
+                "# DATABASES\n" + databases_match.group(1).strip()
+                if databases_match else ""
+            )
 
             repomap_match = re.search(
                 r'^# REPOMAP\s*$(.*?)(?=^# PSEUDOCODE\s*$|\Z)',
@@ -496,6 +511,7 @@ class StarterfileCreator:
             self.root_dir = root
             self.tree_structure = tree
             self.pseudocodes = pseudocodes
+            self.database_section = database_section
             print(f"✓ Loaded {len(pseudocodes)} file specifications from {filename}")
         except (OSError, ValueError) as e:
             print(f"✗ Error loading {filename}: {e}")
@@ -506,6 +522,7 @@ class StarterfileCreator:
             self.root_dir = None
             self.tree_structure = OrderedDict()
             self.pseudocodes = {}
+            self.database_section = ""
             print("✓ All data cleared")
 
 
