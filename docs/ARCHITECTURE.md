@@ -130,16 +130,16 @@ paths, configuration, and documentation.
 
 ### 5. **ui_builder** - Target Repository UI Generation
 
-**Purpose**: Help users create a Streamlit or React + TypeScript application
-inside the generated project's root `ui/` directory. The package lives under
-this assistant's `src/ui_builder/`; generated UI files belong to the target
-repository.
+**Purpose**: Generate a Streamlit or React + TypeScript starter app inside a
+target project's root `ui/` directory. The assistant-side package lives under
+`src/ui_builder/`; generated UI files belong to the target repository.
 
 ### 6. **repo_documenter** - Target Repository Documentation
 
-**Purpose**: Generate or update project documentation inside the generated
-project's root `docs/` directory. The package lives under this assistant's
-`src/repo_documenter/`; documentation output belongs to the target repository.
+**Purpose**: Scan target-project Python packages and generate or refresh a docs
+index, architecture overview, API inventory, and package pages inside the
+target project's root `docs/` directory. The assistant-side package lives under
+`src/repo_documenter/`.
 
 ## Shared Utilities
 

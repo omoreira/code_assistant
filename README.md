@@ -40,13 +40,22 @@ Ensures that refactoring operations don't break imports, paths, or dependencies.
 - **path_resolver.py**: Resolve and validate all paths after refactoring
 - **dependency_mapper.py**: Map code dependencies to analyze impact
 
-### **ui_builder** (Planned)
-Creates a Streamlit or React + TypeScript application in the generated
-repository's root `ui/` directory.
+### **ui_builder**
+Creates a Streamlit or React + TypeScript starter application in the generated
+repository's root `ui/` directory. Existing files are preserved unless
+`--overwrite` is explicitly selected.
 
-### **repo_documenter** (Planned)
-Generates and updates documentation in the generated repository's root `docs/`
-directory.
+### **repo_documenter**
+Scans Python packages and generates an architecture overview, API inventory,
+docs index, and package pages in the generated repository's root `docs/`.
+Existing docs are preserved by default; `--update` refreshes them.
+
+### Deferred support packages
+
+`src/tools/`, `src/db_master_handler/`, and `src/assistant_contracts/` are
+reserved support packages. They are intentionally empty for now; shared tools,
+database infrastructure, and LLM contracts will be added when their interfaces
+and responsibilities are defined.
 
 ## Quick Start
 
@@ -127,6 +136,8 @@ code_assistant/
 - **[code_converter Documentation](docs/code_converter/README.md)** - Research notes to pseudocode and generated repository architecture
 - **[code_debugger Documentation](docs/code_debugger/README.md)** - Debugger module guide
 - **[code_refractor Documentation](docs/code_refractor/README.md)** - Refactoring verification guide
+- **[ui_builder Documentation](docs/ui_builder/README.md)** - Generate Streamlit or React + TypeScript UIs
+- **[repo_documenter Documentation](docs/repo_documenter/README.md)** - Generate and refresh repository docs
 - **[SCRIPTS_GUIDE.md](docs/SCRIPTS_GUIDE.md)** - Shell scripts reference
 
 ## Configuration

@@ -49,6 +49,8 @@ setup(
     entry_points={
         "console_scripts": [
             "code-assistant=code_starter.starterfile_creator:main",
+            "assistant-ui-builder=ui_builder.ui_builder:main",
+            "assistant-repo-documenter=repo_documenter.repo_documenter:main",
         ],
     },
     include_package_data=True,

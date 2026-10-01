@@ -47,6 +47,11 @@ Documentation = "https://github.com/omoreira/code_assistant/tree/main/docs"
 Repository = "https://github.com/omoreira/code_assistant.git"
 Issues = "https://github.com/omoreira/code_assistant/issues"
 
+[project.scripts]
+code-assistant = "code_starter.starterfile_creator:main"
+assistant-ui-builder = "ui_builder.ui_builder:main"
+assistant-repo-documenter = "repo_documenter.repo_documenter:main"
+
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["code_starter*", "code_converter*", "code_debugger*", "code_patcher*", "code_refractor*", "ui_builder*", "repo_documenter*", "shared*", "tools*", "db_master_handler*", "assistant_contracts*"]

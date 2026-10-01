@@ -1,7 +1,15 @@
-"""Future module for generating and updating target-project documentation.
+"""Generate and update documentation in a target project's root ``docs/``."""
 
-Generated documentation belongs in the target repository's root ``docs/``
-directory; this package contains the assistant-side documentation generator.
-"""
+__all__ = ["RepoDocumenter", "DocumentationResult"]
 
-__all__ = []
+
+def __getattr__(name):
+    """Load implementation symbols lazily so ``python -m`` stays warning-free."""
+    if name in __all__:
+        from .repo_documenter import DocumentationResult, RepoDocumenter
+
+        return {
+            "RepoDocumenter": RepoDocumenter,
+            "DocumentationResult": DocumentationResult,
+        }[name]
+    raise AttributeError("module {!r} has no attribute {!r}".format(__name__, name))
