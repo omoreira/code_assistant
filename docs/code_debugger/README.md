@@ -2,6 +2,12 @@
 
 The `code_debugger` module provides intelligent debugging and analysis capabilities for existing Python code using local LLM assistance.
 
+It also owns patch application from a user-authored `patch.pseudo` file. Use
+`code_debugger.apply_patch_file(path, project_root, dry_run=True)` to preview
+the paths touched. `#PATCHES` entries contain unified diffs; `#NEW SCRIPTS`
+entries contain full new file contents. The notes-to-pseudocode step belongs
+to `code_converter`, and structural moves or renames belong to `code_refractor`.
+
 ## Overview
 
 **code_debugger** is currently under development and will provide:

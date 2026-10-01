@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd)"
+export PYTHONPATH="$PROJECT_DIR/src${PYTHONPATH:+:$PYTHONPATH}"
+
+if [[ $# -lt 1 ]]; then
+    echo "Usage: longtext2pseudo <path-to-file> [-o output.pseudo]" >&2
+    exit 2
+fi
+
+exec python3 -m code_converter.longtext_pseudo_converter "$@"

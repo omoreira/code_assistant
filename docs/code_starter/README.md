@@ -109,6 +109,10 @@ Automate GitHub repository setup.
 
 **Output:** Complete repository structure
 
+The repository planner creates both `setup.py` and `pyproject.toml` by default.
+Its interactive setup also offers optional Docker support; enabling it writes a
+`Dockerfile` and `.dockerignore`. Quick Setup leaves Docker support disabled.
+
 ## Workflow Examples
 
 ### Example 1: Create a Flask Web Project

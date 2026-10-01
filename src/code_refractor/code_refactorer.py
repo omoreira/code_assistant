@@ -54,7 +54,7 @@ class CodeRefactorer:
         self.changes_made: List[str] = []
         self._original_contents: Dict[Path, str] = {}
         self._created_destination: Optional[Path] = None
-        
+
     def refactor_with_verification(
         self,
         old_path: str,

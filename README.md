@@ -12,7 +12,7 @@ A comprehensive local coding assistant system with three integrated modules for 
 
 ## Overview
 
-Code Assistant is a modular Python package that leverages local LLM (ollama) to provide intelligent coding assistance without cloud dependencies. It consists of four main components:
+Code Assistant is a modular Python package that uses a local LLM (Ollama) to provide coding assistance.
 
 ### **code_starter**
 Interactive tool for starting new projects. Creates complete project structures from simple specifications.
@@ -25,10 +25,11 @@ Interactive tool for starting new projects. Creates complete project structures 
 - **code_documenter.py**: Automated documentation generation
 
 ### **code_debugger** (In Development)
-Tools for analyzing and debugging existing code with AI assistance.
+Tools for analyzing and debugging existing code with AI assistance. Applies
+user-authored `patch.pseudo` edits and creates its `#NEW SCRIPTS` entries.
 
-### **code_patcher** (In Development)
-Automated code patching and patching utilities.
+### **code_converter**
+Converts long research notes into a structured `patch.pseudo` plan.
 
 ### **code_refractor** (New)
 Intelligent code refactoring with automatic path and name verification.
@@ -38,6 +39,14 @@ Ensures that refactoring operations don't break imports, paths, or dependencies.
 - **code_refactorer.py**: Execute refactoring with automatic updates
 - **path_resolver.py**: Resolve and validate all paths after refactoring
 - **dependency_mapper.py**: Map code dependencies to analyze impact
+
+### **ui_builder** (Planned)
+Creates a Streamlit or React + TypeScript application in the generated
+repository's root `ui/` directory.
+
+### **repo_documenter** (Planned)
+Generates and updates documentation in the generated repository's root `docs/`
+directory.
 
 ## Quick Start
 
@@ -95,9 +104,11 @@ code_assistant/
 ├── ui/                     # Streamlit or other user interface
 ├── src/
 │   ├── code_starter/       # Project creation and code generation
+│   ├── code_converter/     # Research notes to pseudocode
 │   ├── code_debugger/      # Code debugging module
-│   ├── code_patcher/       # Code patching module
 │   ├── code_refractor/     # Refactoring verification module
+│   ├── ui_builder/         # Generate UI apps in target repos
+│   ├── repo_documenter/    # Generate and update target repo docs
 │   ├── tools/              # Reusable technical tools
 │   ├── shared/             # Shared Python utilities
 │   ├── db_master_handler/  # Shared database infrastructure
@@ -113,8 +124,8 @@ code_assistant/
 - **[API.md](docs/API.md)** - Complete API reference
 - **[CONTRIBUTING.md](docs/CONTRIBUTING.md)** - Contribution guidelines
 - **[code_starter Documentation](docs/code_starter/README.md)** - Starter module guide
+- **[code_converter Documentation](docs/code_converter/README.md)** - Research notes to pseudocode and generated repository architecture
 - **[code_debugger Documentation](docs/code_debugger/README.md)** - Debugger module guide
-- **[code_patcher Documentation](docs/code_patcher/README.md)** - Patcher module guide
 - **[code_refractor Documentation](docs/code_refractor/README.md)** - Refactoring verification guide
 - **[SCRIPTS_GUIDE.md](docs/SCRIPTS_GUIDE.md)** - Shell scripts reference
 

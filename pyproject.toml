@@ -49,7 +49,7 @@ Issues = "https://github.com/omoreira/code_assistant/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["code_starter*", "code_debugger*", "code_patcher*", "code_refractor*", "shared*", "tools*", "db_master_handler*", "assistant_contracts*"]
+include = ["code_starter*", "code_converter*", "code_debugger*", "code_patcher*", "code_refractor*", "ui_builder*", "repo_documenter*", "shared*", "tools*", "db_master_handler*", "assistant_contracts*"]
 exclude = ["tests*"]
 
 [tool.black]

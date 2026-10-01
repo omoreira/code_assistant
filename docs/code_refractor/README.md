@@ -40,6 +40,10 @@ pip install -e .
 
 ## Quick Start
 
+Structural refactoring is handled here. Research note conversion belongs to
+`code_converter`; applying `patch.pseudo` edits belongs to `code_debugger`.
+See [the architecture guide](../ARCHITECTURE.md) for the module boundaries.
+
 ### Example 1: Verify Refactoring is Safe
 
 ```python

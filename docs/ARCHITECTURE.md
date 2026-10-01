@@ -2,27 +2,39 @@
 
 ## System Overview
 
-Code Assistant is a modular Python package designed to provide intelligent coding assistance through local LLM integration. The system is built around three main modules that work together with shared utilities and centralized configuration.
+Code Assistant is a modular Python package. Each module owns one stage of the
+workflow, while `shared/` provides cross-cutting services such as LLM access.
+
+The main flow is: `code_starter` creates projects; `code_converter` turns long
+research notes into `patch.pseudo`; `code_debugger` analyzes code and applies
+patches; `code_refractor` handles structural changes such as moving or renaming
+modules and updating imports. The `scripts/longtext2pseudo` command invokes the
+notes converter. Patch application and structural refactoring are separate
+responsibilities.
+
+For generated repositories, `code_starter.github_repo_planner` creates
+`setup.py` and `pyproject.toml` by default. Its interactive setup can also
+generate a `Dockerfile` and `.dockerignore` when Docker support is selected.
+`code_converter` uses the same modular design principle in generated
+specifications: its `src/` packages come from user-designed tasks, while
+shared utilities remain in shared packages; it does not copy this assistant's
+own module names into a future project.
 
 ## Architecture Diagram
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    User Interface                            │
-│         (CLI, Scripts, or Python API)                        │
+│              CLI, Scripts, or Python API                     │
 └────────────────────┬────────────────────────────────────────┘
                      │
         ┌────────────┼────────────┐
         │            │            │
         ▼            ▼            ▼
-┌──────────────┐ ┌──────────────┐ ┌──────────────┐
-│code_starter  │ │code_debugger │ │ code_patcher │
-│              │ │              │ │              │
-│• Project     │ │• Analysis    │ │• Refactoring │
-│  Creation    │ │• Debugging   │ │• Patching    │
-│• Scaffolding │ │• Profiling   │ │• Testing     │
-│• Code Gen    │ │• Suggestions │ │• Validation  │
-└──────┬───────┘ └──────┬───────┘ └──────┬───────┘
+┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
+│code_starter  │ │code_converter│ │code_debugger │ │code_refractor│
+│Project/code  │ │Notes → pseudo│ │Analysis and  │ │Structural    │
+│generation    │ │conversion    │ │patch apply   │ │refactoring   │
+└──────┬───────┘ └──────┬───────┘ └──────┬───────┘ └──────┬───────┘
        │                │                │
        └────────────────┼────────────────┘
                         │
@@ -73,15 +85,23 @@ Code Assistant is a modular Python package designed to provide intelligent codin
 - AI-assisted code generation (via ollama)
 - GitHub repository scaffolding
 
-### 2. **code_debugger** - Code Analysis & Debugging
+### 2. **code_converter** - Long Text to Pseudocode
+
+**Purpose**: Turn UTF-8 research notes into a `patch.pseudo` proposal. The
+`LongContextReader` summarizes bounded chunks through the shared LLM interface
+and asks for `#PATCHES` and `#NEW SCRIPTS` sections. `scripts/longtext2pseudo`
+is its command-line entry point.
+
+### 3. **code_debugger** - Code Analysis, Debugging & Patch Application
 
 **Purpose**: Provide debugging and analysis capabilities for existing code.
 
-**Planned Components**:
+**Components**:
 - Code analysis tools
 - Error detection and suggestion
 - Performance profiling
 - Testing utilities
+- `patch_file.py` parses and applies unified diff entries and creates new files
 
 **Planned Workflow**:
 1. Load existing project code
@@ -90,9 +110,10 @@ Code Assistant is a modular Python package designed to provide intelligent codin
 4. Generate debugging suggestions
 5. Propose fixes and optimizations
 
-### 3. **code_patcher** - Code Refactoring & Patching
+### 4. **code_refractor** - Structural Refactoring
 
-**Purpose**: Automated code patching, refactoring, and improvements.
+**Purpose**: Safely move or rename code elements and update dependent imports,
+paths, configuration, and documentation.
 
 **Planned Components**:
 - Code transformation tools
@@ -106,6 +127,19 @@ Code Assistant is a modular Python package designed to provide intelligent codin
 3. Apply patches with user approval
 4. Validate changes with tests
 5. Generate change documentation
+
+### 5. **ui_builder** - Target Repository UI Generation
+
+**Purpose**: Help users create a Streamlit or React + TypeScript application
+inside the generated project's root `ui/` directory. The package lives under
+this assistant's `src/ui_builder/`; generated UI files belong to the target
+repository.
+
+### 6. **repo_documenter** - Target Repository Documentation
+
+**Purpose**: Generate or update project documentation inside the generated
+project's root `docs/` directory. The package lives under this assistant's
+`src/repo_documenter/`; documentation output belongs to the target repository.
 
 ## Shared Utilities
 
@@ -241,9 +275,11 @@ code_assistant/
 ├── ui/                      # Streamlit or other user interface
 ├── src/
 │   ├── code_starter/        # Project creation and code generation
+│   ├── code_converter/      # Long research text to pseudocode
 │   ├── code_debugger/       # Debugging module
-│   ├── code_patcher/        # Patching module
 │   ├── code_refractor/      # Refactoring module
+│   ├── ui_builder/          # Generate apps in a target repo's root ui/
+│   ├── repo_documenter/     # Generate docs in a target repo's root docs/
 │   ├── tools/               # Reusable technical tools
 │   ├── shared/              # Shared Python utilities
 │   ├── db_master_handler/   # Shared database infrastructure

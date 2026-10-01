@@ -19,11 +19,11 @@ from typing import Dict, List, Optional, Tuple
 from datetime import datetime
 
 
-STANDARD_MODULES = (
-    "code_starter",
-    "code_debugger",
-    "code_patcher",
-    "code_refractor",
+SHARED_DIRECTORIES = (
+    "tools",
+    "shared",
+    "db_master_handler",
+    "assistant_contracts",
 )
 
 
@@ -33,12 +33,14 @@ class GitHubRepoPlanner:
     def __init__(self):
         self.config = {
             'module_structure': None,  # A, B, or C
+            'modules': [],  # User-designed packages created under src/
             'config_files': False,
             'venv_setup': None,  # script, docs, both
             'module_placeholders': False,
             'testing_strategy': None,  # unit, integration, both, none
             'documentation_location': None,  # per-module, root, move-existing
             'ci_cd': False,
+            'docker_support': False,
             'installation_method': None,  # A, B, C
             'shared_code': None,  # yes, no, minimal
             'github_username': None,
@@ -94,19 +96,32 @@ class GitHubRepoPlanner:
     # ==================== QUESTION & ANSWER ====================
     
     def answer_questions(self):
-        """Guide user through all 10 implementation questions."""
+        """Guide user through the repository setup questions."""
         print("\n" + "="*70)
         print("IMPLEMENTATION QUESTIONS")
         print("="*70)
         
         # Q1: Module Structure
         print("\n[Q1] Module Structure")
-        print("Use the standard src-based monorepo layout for the four system modules?")
+        print("Use the standard src-based modular project layout?")
         print("  A) Yes (RECOMMENDED)")
         print("  B) No, record a different plan")
         print("  C) Main repo + submodules")
         self.config['module_structure'] = self._get_choice("A/B/C", ["A", "B", "C"], "B")
         self.decisions.append(f"Module Structure: Option {self.config['module_structure']}")
+
+        while True:
+            module_text = input(
+                "Module names for this project under src/ (comma-separated): "
+            ).strip()
+            try:
+                self.config['modules'] = self._parse_module_names(module_text)
+                break
+            except ValueError as exc:
+                print(exc)
+        self.decisions.append("Project modules: {}".format(
+            ", ".join(self.config['modules']) or "none specified"
+        ))
         
         # Q2: Configuration Files
         print("\n[Q2] Configuration Files")
@@ -127,7 +142,7 @@ class GitHubRepoPlanner:
         
         # Q4: Module Placeholders
         print("\n[Q4] Module Placeholders")
-        print("Create package placeholders for all four modules under src/?")
+        print("Create package placeholders for the modules you listed under src/?")
         self.config['module_placeholders'] = self._get_yes_no("Yes/No", True)
         self.decisions.append(f"Module Placeholders: {'Yes' if self.config['module_placeholders'] else 'No'}")
         
@@ -164,7 +179,7 @@ class GitHubRepoPlanner:
         print("\n[Q8] Installation Method")
         print("How should users install the package?")
         print("  A) pip install -e . (Python package, RECOMMENDED)")
-        print("  B) python src/code_starter/starterfile_creator.py (Direct script)")
+        print("  B) Run your project entry point directly")
         print("  C) Command line tools after pip install (Advanced)")
         self.config['installation_method'] = self._get_choice("A/B/C", ["A", "B", "C"], "A")
         self.decisions.append(f"Installation: Option {self.config['installation_method']}")
@@ -181,7 +196,16 @@ class GitHubRepoPlanner:
         self.decisions.append(f"Shared Code: {self.config['shared_code']}")
         
         # Q10: GitHub Details
-        print("\n[Q10] GitHub Repository Details")
+        # Q11: Docker support
+        print("\n[Q11] Docker Support")
+        print("Generate a Dockerfile and .dockerignore for this project?")
+        self.config['docker_support'] = self._get_yes_no("Yes/No", False)
+        self.decisions.append(
+            "Docker Support: {}".format("Yes" if self.config['docker_support'] else "No")
+        )
+
+        # Q12: GitHub Details
+        print("\n[Q12] GitHub Repository Details")
         self.config['github_username'] = input("GitHub username: ").strip()
         self.config['github_repo_name'] = input("Repository name (default: code-assistant): ").strip() or "code-assistant"
         self.config['author_name'] = input("Your name: ").strip()
@@ -211,6 +235,24 @@ class GitHubRepoPlanner:
             return False
         else:
             return default
+
+    @staticmethod
+    def _parse_module_names(value: str) -> List[str]:
+        """Validate comma-separated user package names."""
+        import re
+
+        names = []
+        for raw_name in value.split(","):
+            name = raw_name.strip()
+            if not name:
+                continue
+            if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name):
+                raise ValueError(
+                    "Module names must be Python identifiers: {}".format(name)
+                )
+            if name not in names:
+                names.append(name)
+        return names
     
     # ==================== VIEW & MANAGE ====================
     
@@ -264,15 +306,27 @@ class GitHubRepoPlanner:
         print("\n" + "="*70)
         print("QUICK SETUP - Using Recommended Defaults")
         print("="*70)
+
+        while True:
+            modules_text = input(
+                "Your project modules under src/ (comma-separated, e.g. ingest, analyze): "
+            ).strip()
+            try:
+                modules = self._parse_module_names(modules_text)
+                break
+            except ValueError as exc:
+                print("Invalid module list: {}".format(exc))
         
         defaults = {
             'module_structure': 'B',
+            'modules': modules,
             'config_files': True,
             'venv_setup': 'both',
             'module_placeholders': True,
             'testing_strategy': 'both',
             'documentation_location': 'per-module',
             'ci_cd': False,
+            'docker_support': False,
             'installation_method': 'A',
             'shared_code': 'minimal',
             'github_username': input("GitHub username: ").strip() or "yourusername",
@@ -318,6 +372,9 @@ class GitHubRepoPlanner:
             
             self._create_setup_py()
             files_created.append("✓ setup.py")
+
+            self._create_pyproject_toml()
+            files_created.append("✓ pyproject.toml")
             
             self._create_requirements()
             files_created.append("✓ requirements.txt")
@@ -346,6 +403,10 @@ class GitHubRepoPlanner:
             if self.config['ci_cd']:
                 self._create_github_workflows()
                 files_created.append("✓ .github/workflows/")
+
+            if self.config.get('docker_support', False):
+                self._create_docker_files()
+                files_created.append("✓ Dockerfile and .dockerignore")
             
             print("\n" + "="*70)
             print("FILES CREATED:")
@@ -359,11 +420,13 @@ class GitHubRepoPlanner:
 
     def _create_standard_directories(self):
         """Create the repository's fixed root and src layout."""
-        directories = [
-            "docs", "scripts", "config", "ui", "src", "src/tools",
-            "src/shared", "src/db_master_handler", "src/assistant_contracts",
-        ]
-        directories.extend(os.path.join("src", module) for module in STANDARD_MODULES)
+        directories = ["docs", "scripts", "config", "ui", "src"]
+        directories.extend(
+            os.path.join("src", shared_dir) for shared_dir in SHARED_DIRECTORIES
+        )
+        directories.extend(
+            os.path.join("src", module) for module in self.config.get('modules', [])
+        )
         for directory in directories:
             os.makedirs(directory, exist_ok=True)
     
@@ -444,15 +507,23 @@ SOFTWARE.
     
     def _create_setup_py(self):
         """Create setup.py file."""
+        project_name = repr(self.config['github_repo_name'])
+        author_name = repr(self.config['author_name'])
+        author_email = repr(self.config['author_email'])
+        repo_url = repr(
+            "https://github.com/{}/{}".format(
+                self.config['github_username'], self.config['github_repo_name']
+            )
+        )
         content = f'''from setuptools import setup, find_packages
 
 setup(
-    name="{self.config['github_repo_name']}",
+    name={project_name},
     version="0.1.0",
-    description="Local AI-powered coding assistant with four modules",
-    author="{self.config['author_name']}",
-    author_email="{self.config['author_email']}",
-    url="https://github.com/{self.config['github_username']}/{self.config['github_repo_name']}",
+    description="Modular Python project",
+    author={author_name},
+    author_email={author_email},
+    url={repo_url},
     package_dir={{"": "src"}},
     packages=find_packages(where="src"),
     python_requires=">=3.8",
@@ -488,6 +559,60 @@ setup(
 '''
         with open('setup.py', 'w') as f:
             f.write(content)
+
+    def _create_pyproject_toml(self):
+        """Create modern PEP 621 metadata alongside the compatibility setup.py."""
+        project_name = json.dumps(self.config['github_repo_name'])
+        author_name = json.dumps(self.config['author_name'])
+        author_email = json.dumps(self.config['author_email'])
+        content = f'''[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = {project_name}
+version = "0.1.0"
+description = "Modular Python project"
+authors = [{{ name = {author_name}, email = {author_email} }}]
+requires-python = ">=3.8"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "pytest-cov>=3.0", "black>=22.0", "flake8>=4.0"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+'''
+        with open('pyproject.toml', 'w') as f:
+            f.write(content)
+
+    def _create_docker_files(self):
+        """Create a small Python image definition and Docker build exclusions."""
+        dockerfile = '''FROM python:3.11-slim
+
+WORKDIR /app
+COPY . .
+RUN python -m pip install --no-cache-dir --upgrade pip \\
+    && if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi \\
+    && pip install --no-cache-dir .
+
+CMD ["python"]
+'''
+        dockerignore = '''.git
+.venv
+venv
+__pycache__
+*.py[cod]
+*.egg-info
+.pytest_cache
+.mypy_cache
+.coverage
+tests
+'''
+        with open('Dockerfile', 'w') as f:
+            f.write(dockerfile)
+        with open('.dockerignore', 'w') as f:
+            f.write(dockerignore)
     
     def _create_requirements(self):
         """Create requirements files."""
@@ -523,11 +648,12 @@ ipython>=7.0
     
     def _create_root_readme(self):
         """Create root README.md."""
-        module_list = "\n".join(f"- **{name}**" for name in STANDARD_MODULES)
-        module_tree = "\n".join(f"    ├── {name}/" for name in STANDARD_MODULES)
+        modules = self.config.get('modules', [])
+        module_list = "\n".join(f"- **{name}**" for name in modules) or "- User-designed modules"
+        module_tree = "\n".join(f"    ├── {name}/" for name in modules)
         content = f'''# Code Assistant
 
-A local, AI-powered coding assistant with four system modules.
+A modular Python project with separate packages for its user-designed tasks.
 
 ## Modules
 
@@ -549,42 +675,33 @@ source venv/bin/activate  # On Windows: venv\\Scripts\\activate
 pip install -e ".[dev]"
 ```
 
-### 2. Use code_starter
+### 2. Run your project
 
-```bash
-python -m code_starter.starterfile_creator
-```
-
-This will guide you through:
-1. Creating a project specification
-2. Generating project skeleton
-3. Converting pseudocode to real code
+Add an entry point to one of your designed modules, then run it with
+`python -m <your_module>` or add a console command in the package metadata.
 
 ## Documentation
 
 - [Architecture](docs/ARCHITECTURE.md)
 - **Module Docs:**
-  - [code_starter](docs/code_starter/README.md)
-  - [code_debugger](docs/code_debugger/README.md)
-  - [code_patcher](docs/code_patcher/README.md)
-  - [code_refractor](docs/code_refractor/README.md)
+  - Documentation lives under docs/ and can be organized by the project modules.
 
 ## Installation Options
 
 ### Option A: Python Package (Recommended)
 ```bash
 pip install -e .
-python -m code_starter.starterfile_creator
 ```
 
 ### Option B: Direct Scripts
 ```bash
-python src/code_starter/starterfile_creator.py
+# Run one of your own scripts, for example:
+python src/<your_module>/main.py
 ```
 
 ### Option C: CLI Commands (After full setup)
 ```bash
-code-assistant-start
+# Use the console command defined by your project
 ```
 
 ## Project Structure
@@ -664,7 +781,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md)
 PROJECT_NAME = "code-assistant"
 
 # Modules
-MODULES = ["code_starter", "code_debugger", "code_patcher", "code_refractor"]
+MODULES = {self.config.get('modules', [])!r}
 
 # LLM Configuration
 LLM_MODEL = "deepseek-coder:6.7b"
@@ -679,7 +796,7 @@ LOG_LEVEL = "INFO"
     
     def _create_module_placeholders(self):
         """Create placeholder modules."""
-        for module_name in STANDARD_MODULES:
+        for module_name in self.config.get('modules', []):
             module_dir = os.path.join("src", module_name)
             os.makedirs(module_dir, exist_ok=True)
             # __init__.py
@@ -792,12 +909,14 @@ jobs:
         
         settings = [
             ("Module Structure", self.config['module_structure']),
+            ("User-Designed Modules", ", ".join(self.config.get('modules', [])) or "none"),
             ("Configuration Files", "Yes" if self.config['config_files'] else "No"),
             ("venv Setup", self.config['venv_setup']),
             ("Module Placeholders", "Yes" if self.config['module_placeholders'] else "No"),
             ("Testing Strategy", self.config['testing_strategy']),
             ("Documentation Location", self.config['documentation_location']),
             ("CI/CD Workflows", "Yes" if self.config['ci_cd'] else "No"),
+            ("Docker Support", "Yes" if self.config.get('docker_support') else "No"),
             ("Installation Method", self.config['installation_method']),
             ("Shared Code", self.config['shared_code']),
         ]
