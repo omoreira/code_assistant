@@ -30,6 +30,7 @@ import tempfile
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
 import json
+import argparse
 
 try:  # Support both package and direct-script execution.
     from .blueprint_renderer import create_blueprint, parse_repomap
@@ -40,8 +41,10 @@ except ImportError:  # pragma: no cover - used by `python code_starter/pseudocod
 class PseudocodeRenderer:
     """Main controller for pseudocode to code conversion."""
     
-    def __init__(self):
-        self.starterfile = 'starterfile.pseudo'
+    def __init__(self, starterfile: str = 'starterfile.pseudo', project_root: Optional[str] = None):
+        self.starterfile = str(Path(starterfile).expanduser())
+        self.project_root = Path(project_root).expanduser().resolve() if project_root else None
+        self._project_root_explicit = project_root is not None
         self.mode = None
         self.converted_files: List[str] = []
         self.warnings: List[str] = []
@@ -53,14 +56,31 @@ class PseudocodeRenderer:
         
         Returns: 'mode_a' or 'mode_b'
         """
-        if os.path.exists(self.starterfile):
+        if Path(self.starterfile).is_file():
+            if not self._project_root_explicit:
+                self.project_root = self._root_from_starterfile()
             self.mode = 'mode_a'
             print("[pseudocode_renderer] Detected starterfile.pseudo → Running MODE A (Fresh Project)")
             return 'mode_a'
         else:
+            if self.project_root is None:
+                self.project_root = Path.cwd().resolve()
             self.mode = 'mode_b'
             print("[pseudocode_renderer] starterfile.pseudo not found → Running MODE B (Existing Project)")
             return 'mode_b'
+
+    def _root_from_starterfile(self) -> Path:
+        """Resolve PROJECT_ROOT metadata, retaining CWD semantics for legacy files."""
+        starter_path = Path(self.starterfile).resolve()
+        try:
+            content = starter_path.read_text(encoding='utf-8')
+        except OSError:
+            return Path.cwd().resolve()
+        marker = re.search(r'^# PROJECT_ROOT:\s*(.*?)\s*$', content, re.MULTILINE)
+        if not marker:
+            return Path.cwd().resolve()
+        root = (starter_path.parent / marker.group(1)).resolve()
+        return root
     
     # ==================== MODE A: Fresh Project ====================
     
@@ -83,6 +103,10 @@ class PseudocodeRenderer:
                 return file_pseudocodes
             
             pseudo_content = content[pseudo_match.end():]
+            pseudo_content = re.split(
+                r'^# SPECIFICATIONS\s*$', pseudo_content,
+                maxsplit=1, flags=re.MULTILINE
+            )[0]
 
             # Headers are complete project-relative paths. Capture everything
             # after "## " so names may include hyphens, spaces, and dots.
@@ -105,6 +129,34 @@ class PseudocodeRenderer:
         except Exception as e:
             self.errors.append(f"Error parsing starterfile.pseudo: {e}")
             return file_pseudocodes
+
+    def parse_specifications(self) -> Dict[str, str]:
+        """Read optional user-authored .pseudo artifacts from the starterfile."""
+        try:
+            content = Path(self.starterfile).read_text(encoding="utf-8")
+        except OSError as exc:
+            self.errors.append("Could not read specifications: {}".format(exc))
+            return {}
+        section = re.search(
+            r'^# SPECIFICATIONS\s*$(.*)\Z', content,
+            flags=re.MULTILINE | re.DOTALL
+        )
+        if not section:
+            return {}
+        specs: Dict[str, str] = {}
+        active = None
+        body: List[str] = []
+        for line in section.group(1).splitlines():
+            header = re.match(r'^##\s+(.+?)\s*$', line)
+            if header:
+                if active is not None:
+                    specs[active] = "\n".join(body).strip() + "\n"
+                active, body = header.group(1).strip(), []
+            elif active is not None:
+                body.append(line)
+        if active is not None:
+            specs[active] = "\n".join(body).strip() + "\n"
+        return specs
     
     def verify_mode_a_setup(self, file_pseudocodes: Dict[str, str]) -> Tuple[bool, List[str]]:
         """
@@ -147,13 +199,12 @@ class PseudocodeRenderer:
         
         return all_ok, report
 
-    @staticmethod
-    def _resolve_project_path(filepath: str) -> Path:
+    def _resolve_project_path(self, filepath: str) -> Path:
         """Resolve a header path and ensure it stays within the working tree."""
         path = Path(filepath)
         if path.is_absolute():
             raise ValueError(f"PSEUDOCODE path must be project-relative: {filepath}")
-        root = Path.cwd().resolve()
+        root = (self.project_root or Path.cwd()).resolve()
         resolved = (root / path).resolve()
         try:
             resolved.relative_to(root)
@@ -167,7 +218,7 @@ class PseudocodeRenderer:
         repomap = parse_repomap(self.starterfile)
         # Blueprint creation only seeds directories; REPOMAP file entries have
         # no effect on which files are created.
-        success, message = create_blueprint(repomap)
+        success, message = create_blueprint(repomap, project_root=str(self.project_root or Path.cwd()))
         if not success:
             self.errors.append(message)
             return False, [f"  ✗ {message}"]
@@ -187,6 +238,21 @@ class PseudocodeRenderer:
                 self.errors.append(f"Could not prepare {filepath}: {exc}")
                 report.append(f"  ✗ Could not prepare {filepath}: {exc}")
                 return False, report
+        for filepath, content in self.parse_specifications().items():
+            try:
+                target = self._resolve_project_path(filepath)
+                if target.suffix != ".pseudo":
+                    raise ValueError("Specification artifacts must use the .pseudo extension")
+                target.parent.mkdir(parents=True, exist_ok=True)
+                if target.exists():
+                    report.append("  - Existing specification preserved: {}".format(filepath))
+                else:
+                    target.write_text(content, encoding="utf-8")
+                    report.append("  ✓ Created specification: {}".format(filepath))
+            except (OSError, ValueError) as exc:
+                self.errors.append("Could not prepare specification {}: {}".format(filepath, exc))
+                report.append("  ✗ Could not prepare specification {}: {}".format(filepath, exc))
+                return False, report
         return True, report
     
     def run_mode_a(self) -> bool:
@@ -202,12 +268,15 @@ class PseudocodeRenderer:
         # Step 1: Parse starterfile.pseudo
         print("\n[Step 1] Extracting pseudocode from starterfile.pseudo...")
         file_pseudocodes = self.parse_starterfile()
+        specifications = self.parse_specifications()
         
-        if not file_pseudocodes:
-            self.errors.append("No pseudocode definitions found in starterfile.pseudo")
+        if not file_pseudocodes and not specifications:
+            self.errors.append("No source pseudocode or project specifications found in starterfile")
             return False
         
-        print(f"  Found {len(file_pseudocodes)} files with pseudocode")
+        print("  Found {} source files and {} project specifications".format(
+            len(file_pseudocodes), len(specifications)
+        ))
         
         # Step 2: Seed directories and create files using header paths.
         print("\n[Step 2] Preparing project structure from REPOMAP and PSEUDOCODE...")
@@ -239,7 +308,7 @@ class PseudocodeRenderer:
         # Step 5: Cleanup - Delete starterfile.pseudo
         print("\n[Step 5] Cleanup: Removing starterfile.pseudo...")
         try:
-            os.remove(self.starterfile)
+            Path(self.starterfile).unlink()
             print(f"  ✓ Deleted {self.starterfile}")
         except Exception as e:
             self.warnings.append(f"Failed to delete starterfile.pseudo: {e}")
@@ -548,7 +617,11 @@ Generated Code:"""
 
 def main():
     """Entry point for pseudocode renderer."""
-    renderer = PseudocodeRenderer()
+    parser = argparse.ArgumentParser(description="Render a starterfile.pseudo project")
+    parser.add_argument("starterfile", nargs="?", default="starterfile.pseudo")
+    parser.add_argument("--project-root", help="Override the project root declared by the starterfile")
+    args = parser.parse_args()
+    renderer = PseudocodeRenderer(args.starterfile, project_root=args.project_root)
     success = renderer.run()
     return "success" if success else "fail"
 

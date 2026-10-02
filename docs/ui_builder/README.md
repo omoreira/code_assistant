@@ -21,6 +21,17 @@ Generated files that already exist are skipped unless `overwrite=True` is
 passed. An optional `shared.llm.LLMInterface` can generate the primary
 application component from the description.
 
+Create and use a project-local design brief with:
+
+```python
+builder = UIBuilder("/path/to/new_assistant")
+builder.create_pseudocode()
+result = builder.build_from_pseudocode(framework="streamlit")
+```
+
+This reads `ui/uidesign.pseudo` and generates the UI under the same `ui/`
+folder. The CLI supports `--create-pseudo` and `--from-pseudo` for this flow.
+
 ## CLI
 
 ```bash

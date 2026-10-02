@@ -45,6 +45,14 @@ Creates a Streamlit or React + TypeScript starter application in the generated
 repository's root `ui/` directory. Existing files are preserved unless
 `--overwrite` is explicitly selected.
 
+It can create `ui/uidesign.pseudo` and build the interface from that design
+brief.
+
+### **benchmarker**
+
+Creates `benchmark/benchmark.pseudo` specifications and generates a runnable
+Python benchmark harness in the target repository's root `benchmark/` folder.
+
 ### **repo_documenter**
 Scans Python packages and generates an architecture overview, API inventory,
 docs index, and package pages in the generated repository's root `docs/`.
@@ -111,12 +119,14 @@ code_assistant/
 ├── scripts/                # User-facing shell helpers
 ├── config/                 # Runtime and logging configuration
 ├── ui/                     # Streamlit or other user interface
+├── benchmark/              # Benchmark specification and harness
 ├── src/
 │   ├── code_starter/       # Project creation and code generation
 │   ├── code_converter/     # Research notes to pseudocode
 │   ├── code_debugger/      # Code debugging module
 │   ├── code_refractor/     # Refactoring verification module
 │   ├── ui_builder/         # Generate UI apps in target repos
+│   ├── benchmarker/        # Generate benchmark harnesses in target repos
 │   ├── repo_documenter/    # Generate and update target repo docs
 │   ├── tools/              # Reusable technical tools
 │   ├── shared/             # Shared Python utilities
@@ -137,6 +147,7 @@ code_assistant/
 - **[code_debugger Documentation](docs/code_debugger/README.md)** - Debugger module guide
 - **[code_refractor Documentation](docs/code_refractor/README.md)** - Refactoring verification guide
 - **[ui_builder Documentation](docs/ui_builder/README.md)** - Generate Streamlit or React + TypeScript UIs
+- **[benchmarker Documentation](docs/benchmarker/README.md)** - Create benchmark specs and harnesses
 - **[repo_documenter Documentation](docs/repo_documenter/README.md)** - Generate and refresh repository docs
 - **[SCRIPTS_GUIDE.md](docs/SCRIPTS_GUIDE.md)** - Shell scripts reference
 

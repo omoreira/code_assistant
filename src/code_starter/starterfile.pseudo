@@ -5,6 +5,7 @@ code_assistant/
     scripts/
     config/
     ui/
+    benchmark/
     src/
         code_starter/
         code_debugger/
@@ -23,3 +24,13 @@ OUTPUT: the result produced by the script
 TASK: describe the script's responsibilities and main steps
 CONDITIONS: list constraints or error cases the implementation must handle
 PREFERENCES: list implementation preferences when relevant
+
+# SPECIFICATIONS
+
+## code_assistant/benchmark/benchmark.pseudo
+Describe the benchmark goal, target command or operation, input data,
+warm-up and measured iterations, and the metrics to report.
+
+## code_assistant/ui/uidesign.pseudo
+Describe the UI framework (Streamlit or React + TypeScript), pages,
+user workflows, inputs, outputs, and visual or accessibility requirements.

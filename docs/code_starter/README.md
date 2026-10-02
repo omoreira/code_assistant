@@ -73,6 +73,25 @@ Create project specifications in interactive or programmatic mode.
 
 **Output:** `starterfile.pseudo` (project specification)
 
+New project maps include a root `benchmark/` directory. The starterfile also
+has a separate `# SPECIFICATIONS` section that creates editable
+`benchmark/benchmark.pseudo` and `ui/uidesign.pseudo` files. These are user
+specifications, so the source-code converter leaves them as `.pseudo` files.
+Use the `benchmarker` and `ui_builder` modules to turn them into runnable code.
+
+The creator asks for the target project root. By default it saves
+`starterfile.pseudo` inside that folder and writes `# PROJECT_ROOT: .` into the
+file. REPOMAP directories and PSEUDOCODE file headers are relative to that
+folder, so the starterfile can be rendered from any working directory:
+
+```bash
+python -m code_starter.pseudocode_renderer /path/to/new_assistant/starterfile.pseudo
+```
+
+You can override the root with `--project-root /path/to/new_assistant`. Older
+starterfiles without `# PROJECT_ROOT:` retain their previous behavior and use
+the current working directory as the project root.
+
 ### 2. BlueprintRenderer
 
 Generate directory structures from project specifications.

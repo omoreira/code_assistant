@@ -132,7 +132,8 @@ paths, configuration, and documentation.
 
 **Purpose**: Generate a Streamlit or React + TypeScript starter app inside a
 target project's root `ui/` directory. The assistant-side package lives under
-`src/ui_builder/`; generated UI files belong to the target repository.
+`src/ui_builder/`; it can create `ui/uidesign.pseudo` and generate UI files from
+that specification.
 
 ### 6. **repo_documenter** - Target Repository Documentation
 
@@ -140,6 +141,13 @@ target project's root `ui/` directory. The assistant-side package lives under
 index, architecture overview, API inventory, and package pages inside the
 target project's root `docs/` directory. The assistant-side package lives under
 `src/repo_documenter/`.
+
+### 7. **benchmarker** - Target Repository Benchmark Generation
+
+**Purpose**: Create `benchmark/benchmark.pseudo` specifications and generate a
+runnable Python benchmark harness inside the target repository's root
+`benchmark/` directory. The assistant-side package lives under
+`src/benchmarker/`.
 
 ## Shared Utilities
 
@@ -273,6 +281,7 @@ code_assistant/
 ├── scripts/                 # User-facing shell helpers
 ├── config/                  # Runtime and logging configuration
 ├── ui/                      # Streamlit or other user interface
+├── benchmark/               # Benchmark specification and generated harness
 ├── src/
 │   ├── code_starter/        # Project creation and code generation
 │   ├── code_converter/      # Long research text to pseudocode
@@ -280,6 +289,7 @@ code_assistant/
 │   ├── code_refractor/      # Refactoring module
 │   ├── ui_builder/          # Generate apps in a target repo's root ui/
 │   ├── repo_documenter/     # Generate docs in a target repo's root docs/
+│   ├── benchmarker/         # Generate benchmark code in a target repo
 │   ├── tools/               # Reusable technical tools
 │   ├── shared/              # Shared Python utilities
 │   ├── db_master_handler/   # Shared database infrastructure

@@ -1,4 +1,4 @@
-"""Generate a UI in a target project's root ``ui/`` directory."""
+"""Create UI design specifications and generate a target project's UI."""
 
 __all__ = ["UIBuilder", "UIBuildResult"]
 

@@ -15,6 +15,7 @@ Features:
 import os
 import json
 import re
+from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from collections import OrderedDict
 
@@ -24,6 +25,7 @@ BASE_DIRECTORIES = (
     "scripts",
     "config",
     "ui",
+    "benchmark",
     "src",
     "src/tools",
     "src/shared",
@@ -107,7 +109,7 @@ class StarterfileCreator:
         while True:
             root = input("\nEnter root directory (e.g., ./my_project): ").strip()
             if root:
-                self.root_dir = root.rstrip("/\\") or root
+                self.root_dir = str(Path(root).expanduser().resolve())
                 root = self.root_dir
                 self.tree_structure = {root: {'type': 'dir', 'children': []}}
                 self.pseudocodes = {}
@@ -319,11 +321,15 @@ class StarterfileCreator:
     def generate_content(self) -> str:
         """Generate the complete starterfile.pseudo content."""
         lines = []
+
+        # New starterfiles are portable: all declared paths are relative to
+        # the folder containing the starterfile.
+        lines.append("# PROJECT_ROOT: .\n")
         
         # REPOMAP section
         lines.append("# REPOMAP\n")
         if self.root_dir:
-            lines.append(self.root_dir)
+            lines.append(".")
             self._generate_repomap(self.root_dir, "    ", lines, is_last=True)
         
         lines.append("\n\n")
@@ -333,7 +339,8 @@ class StarterfileCreator:
         files = self.get_all_files()
         
         for filepath in files:
-            lines.append(f"\n## {filepath}\n")
+            relative_path = os.path.relpath(filepath, self.root_dir) if self.root_dir else filepath
+            lines.append(f"\n## {relative_path}\n")
             
             pseudo = self.pseudocodes.get(filepath, {})
             
@@ -341,6 +348,18 @@ class StarterfileCreator:
                 if pseudo.get(field):
                     lines.append(f"{field.upper()}: {pseudo[field]}")
                     lines.append("")
+
+        # These user-maintained specifications are distinct from source code
+        # entries and are never sent through the starter code generator.
+        lines.extend([
+            "\n# SPECIFICATIONS\n",
+            "\n## benchmark/benchmark.pseudo\n",
+            "Describe the benchmark goal, target command or operation, input data,",
+            "warm-up and measured iterations, and the metrics to report.\n",
+            "\n## ui/uidesign.pseudo\n",
+            "Describe the UI framework (Streamlit or React + TypeScript), pages,",
+            "user workflows, inputs, outputs, and visual or accessibility requirements.\n",
+        ])
 
         if self.database_section.strip():
             lines.append("\n")
@@ -372,13 +391,22 @@ class StarterfileCreator:
             print("Cannot save: No project structure created")
             return
         
-        filename = input("\nFilename (default: starterfile.pseudo): ").strip()
+        filename = input("\nFilename (default: starterfile.pseudo in project root): ").strip()
         if not filename:
-            filename = "starterfile.pseudo"
+            output_path = Path(self.root_dir) / "starterfile.pseudo"
+        else:
+            requested_path = Path(filename).expanduser()
+            output_path = requested_path if requested_path.is_absolute() else Path(self.root_dir) / requested_path
+        output_path = output_path.resolve()
+        if output_path.parent != Path(self.root_dir).resolve():
+            print("✗ Starterfile must be saved directly inside the selected project root")
+            return
+        filename = str(output_path)
         
         content = self.generate_content()
         
         try:
+            Path(filename).parent.mkdir(parents=True, exist_ok=True)
             with open(filename, 'w') as f:
                 f.write(content)
             print(f"✓ Saved to {filename}")
@@ -417,19 +445,27 @@ class StarterfileCreator:
                 r'^# REPOMAP\s*$(.*?)(?=^# PSEUDOCODE\s*$|\Z)',
                 content, flags=re.MULTILINE | re.DOTALL
             )
+            root_marker = re.search(r'^# PROJECT_ROOT:\s*(.*?)\s*$', content, re.MULTILINE)
+            portable_format = root_marker is not None
             repomap_lines = repomap_match.group(1).splitlines() if repomap_match else []
-            root = None
-            for line in repomap_lines:
-                clean = re.sub(r'^[|\-+`_\s]+', '', line).strip()
-                clean = re.split(r'\s*\(', clean, maxsplit=1)[0].strip().rstrip('/')
-                if clean:
-                    root = clean
-                    break
+            root = str((Path(filename).expanduser().resolve().parent / root_marker.group(1)).resolve()) if portable_format else None
+            if not portable_format:
+                for line in repomap_lines:
+                    clean = re.sub(r'^[|\-+`_\s]+', '', line).strip()
+                    clean = re.split(r'\s*\(', clean, maxsplit=1)[0].strip().rstrip('/')
+                    if clean:
+                        root = clean
+                        break
 
             sections = {}
             current_path = None
             body = []
-            for line in content[pseudo_match.end():].splitlines():
+            pseudo_text = content[pseudo_match.end():]
+            pseudo_text = re.split(
+                r'^# SPECIFICATIONS\s*$', pseudo_text,
+                maxsplit=1, flags=re.MULTILINE
+            )[0]
+            for line in pseudo_text.splitlines():
                 header = re.match(r'^##\s+(.+?)\s*$', line)
                 if header:
                     if current_path is not None:
@@ -472,7 +508,8 @@ class StarterfileCreator:
 
             parsed_repomap = parse_repomap(filename) or {'directories': []}
             for directory in parsed_repomap.get('directories', []):
-                add_directory(directory)
+                directory_path = os.path.join(root, directory) if portable_format else directory
+                add_directory(directory_path)
 
             pseudocodes = {}
             field_labels = {
@@ -481,7 +518,7 @@ class StarterfileCreator:
                 'PREFERENCES': 'preferences',
             }
             for file_path, body_text in sections.items():
-                normalized = os.path.normpath(file_path)
+                normalized = os.path.normpath(os.path.join(root, file_path) if portable_format else file_path)
                 try:
                     relative = os.path.relpath(normalized, root)
                     if relative == os.pardir or relative.startswith(os.pardir + os.sep):

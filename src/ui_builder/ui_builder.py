@@ -28,12 +28,45 @@ class UIBuilder:
     """
 
     FRAMEWORKS = {"streamlit", "react-typescript"}
+    DEFAULT_DESIGN = """# UI design specification
+
+FRAMEWORK: Streamlit or React + TypeScript
+PAGES: List the pages or major views.
+WORKFLOWS: Describe what users do and in what order.
+INPUTS AND OUTPUTS: Describe forms, data, results, and feedback.
+VISUAL DESIGN: Describe layout, colors, and responsive behavior.
+ACCESSIBILITY: Describe keyboard, labeling, and contrast requirements.
+"""
 
     def __init__(self, project_root: str, llm_interface=None):
         self.project_root = Path(project_root).resolve()
         if not self.project_root.is_dir():
             raise NotADirectoryError("Target project root must be an existing directory")
         self.llm = llm_interface
+
+    @property
+    def specification_path(self) -> Path:
+        return self.project_root / "ui" / "uidesign.pseudo"
+
+    def create_pseudocode(self, content: Optional[str] = None, overwrite: bool = False) -> str:
+        """Create an editable ``ui/uidesign.pseudo`` design brief."""
+        target = self.specification_path
+        if target.exists() and not overwrite:
+            return str(target)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text((content or self.DEFAULT_DESIGN).rstrip() + "\n", encoding="utf-8")
+        return str(target)
+
+    def build_from_pseudocode(
+        self, framework: str = "streamlit", overwrite: bool = False
+    ) -> UIBuildResult:
+        """Generate the selected UI using ``ui/uidesign.pseudo`` as its brief."""
+        if not self.specification_path.is_file():
+            raise FileNotFoundError("Create ui/uidesign.pseudo first")
+        design = self.specification_path.read_text(encoding="utf-8").strip()
+        if not design:
+            raise ValueError("ui/uidesign.pseudo is empty")
+        return self.build(design, framework=framework, overwrite=overwrite)
 
     def build(
         self,
@@ -220,7 +253,12 @@ def main(argv=None) -> int:
     parser.add_argument(
         "--framework", choices=sorted(UIBuilder.FRAMEWORKS), default="streamlit"
     )
-    parser.add_argument("--description", required=True, help="Describe the app to create")
+    parser.add_argument("--description", help="Describe the app to create")
+    parser.add_argument(
+        "--from-pseudo", action="store_true",
+        help="Use ui/uidesign.pseudo as the design description",
+    )
+    parser.add_argument("--create-pseudo", action="store_true", help="Create the default uidesign.pseudo")
     parser.add_argument(
         "--overwrite", action="store_true", help="Replace generated UI files"
     )
@@ -235,9 +273,17 @@ def main(argv=None) -> int:
     if args.use_llm:
         from shared.llm import LLMInterface
         llm = LLMInterface(model=args.model, api_endpoint=args.endpoint)
-    result = UIBuilder(args.project_root, llm_interface=llm).build(
-        args.description, framework=args.framework, overwrite=args.overwrite
-    )
+    builder = UIBuilder(args.project_root, llm_interface=llm)
+    if args.create_pseudo:
+        print("Design specification: {}".format(builder.create_pseudocode(overwrite=args.overwrite)))
+    if args.from_pseudo:
+        result = builder.build_from_pseudocode(args.framework, overwrite=args.overwrite)
+    elif args.description:
+        result = builder.build(args.description, framework=args.framework, overwrite=args.overwrite)
+    else:
+        if args.create_pseudo:
+            return 0
+        parser.error("provide --description, --from-pseudo, or --create-pseudo")
     print("Created: {}".format(", ".join(result.created) or "none"))
     print("Skipped existing: {}".format(", ".join(result.skipped) or "none"))
     return 0
