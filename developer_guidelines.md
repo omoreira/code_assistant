@@ -14,18 +14,20 @@ functional areas are:
 
 | Package | Responsibility |
 | --- | --- |
-| `code_starter` | Define a starterfile, create a repository structure, and generate source files |
+| `code_starter` | Define a starterfile, create a repository structure, create SQLite databases, generate source files, and orchestrate the end-to-end pipeline |
 | `code_converter` | Convert long research notes into `patch.pseudo` |
-| `code_analyzer` | Parse/apply `#PATCHES` and create `#NEW SCRIPTS` entries |
+| `code_analyzer` | Parse/apply `#PATCHES` and create `#NEW SCRIPTS` entries, and analyze a starterfile before generation |
 | `code_refractor` | Verify and perform structural path/module changes |
 | `ui_builder` | Create `ui/uidesign.pseudo` and generate a UI in a target repository |
 | `benchmarker` | Create `benchmark/benchmark.pseudo` and generate a benchmark harness |
 | `repo_documenter` | Inspect a target repository and write/update docs in its root `docs/` |
+| `data_handler` | Create SQLite database files from generated SQL schemas |
 | `shared` | Cross-cutting configuration, logging, LLM, and utility services |
 
 Avoid combining the converter and applier: conversion proposes a structured
-plan, while the debugger applies it. Similarly, generated-repository modules
-belong to the future project and should be derived from user-designed tasks;
+plan, while the applier (`code_analyzer`) applies it. Similarly,
+generated-repository modules belong to the future project and should be
+derived from user-designed tasks;
 do not copy this assistant’s own module names into every generated `src/`.
 
 ### Keep project context explicit
@@ -39,8 +41,10 @@ working-directory behavior.
 
 ### Treat pseudo files according to their purpose
 
-- `starterfile.pseudo` contains a REPOMAP, source-code `# PSEUDOCODE` entries,
-  and optionally `# SPECIFICATIONS` artifacts.
+- `starterfile.pseudo` contains an optional `# REPOMAP`, an optional
+  `# DATABASES` section, source-code `# PSEUDOCODE` entries, optionally
+  `# SPECIFICATIONS` artifacts, and a `# STATUS:` approval marker. A section
+  body of `NONE` means "no items".
 - `patch.pseudo` contains `#PATCHES` unified diffs and `#NEW SCRIPTS` complete
   file contents.
 - `ui/uidesign.pseudo` describes a UI to be generated inside the target
@@ -62,15 +66,15 @@ src/
 ├── ui_builder/
 ├── benchmarker/
 ├── repo_documenter/
+├── data_handler/          # SQLite schema and database creation
 ├── shared/
 ├── tools/                 # Reserved support package
-├── data_handler/          # Reserved support package
 └── assistant_contracts/   # Reserved support package
 ```
 
-The three support packages are intentionally sparse. Add code to them only
-when the responsibility and shared interface are clear; do not use them as
-miscellaneous catch-all folders.
+`tools/` and `assistant_contracts/` are reserved, mostly empty support
+packages. Add code to them only when the responsibility and shared interface
+are clear; do not use them as miscellaneous catch-all folders.
 
 ## 3. Environment and package layout
 
@@ -121,12 +125,18 @@ because generation completed.
 
 ### Repository creation
 
-`StarterfileCreator` creates a portable starter specification. The
-`PseudocodeRenderer` reads REPOMAP directories, creates specification
-artifacts, creates source paths from PSEUDOCODE headers, converts source
-pseudocode, and removes the starterfile only after successful conversion.
-The renderer preserves existing specification files and expects source files
-to be empty before conversion.
+`StarterfileCreator` creates a portable starter specification. `Pipeline`
+(preflight → `code_starter` → `code_analyzer` → `repo_documenter`) is the
+recommended entry point: preflight runs `pseudocode_analyzer` and requires a
+`# STATUS: APPROVED` marker before any generation. `PseudocodeRenderer` reads
+REPOMAP directories, creates specification artifacts, creates source paths
+from PSEUDOCODE headers, creates SQLite databases from `# DATABASES` (through
+`sql_schema_creator` and `data_handler`), and converts source pseudocode. On
+success the renderer archives the starterfile to `tmp/` with a timestamp
+(formerly it deleted the file); the pipeline defers that archive until every
+stage has succeeded. The renderer preserves existing specification files and
+expects source files to be empty before conversion. Sections whose body is
+`NONE` are treated as empty.
 
 ### Research to patch
 
@@ -196,7 +206,8 @@ Before accepting a change, review the diff for:
 - `code_converter` proposes pseudocode and does not itself apply edits.
 - `code_refractor` has verification and refactoring APIs, but should be treated
   as an evolving implementation and carefully reviewed.
-- `tools/`, `data_handler/`, and `assistant_contracts/` are reserved,
-  mostly empty support packages.
+- `tools/` and `assistant_contracts/` are reserved, mostly empty support
+  packages. `data_handler` implements SQLite database creation from generated
+  schemas.
 - LLM-backed generation depends on a working local Ollama service unless a
   caller injects another compatible interface.

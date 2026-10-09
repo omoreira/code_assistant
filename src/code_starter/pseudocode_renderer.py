@@ -26,7 +26,9 @@ import os
 import re
 import ast
 import stat
+import shutil
 import tempfile
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
 import json
@@ -38,15 +40,68 @@ except ImportError:  # pragma: no cover - used by `python code_starter/pseudocod
     from blueprint_renderer import create_blueprint, parse_repomap
 
 
+# Bodies that mean "no items in this section".
+_NONE_TOKENS = {"", "NONE", "EMPTY"}
+
+
+def _extract_section_body(content: str, name: str) -> Optional[str]:
+    """Return the body of a top-level ``# NAME`` section, or ``None``."""
+    match = re.search(
+        r'^#\s*' + re.escape(name) + r'\s*$(.*?)(?=^#\s+\w|\Z)',
+        content, flags=re.MULTILINE | re.DOTALL | re.IGNORECASE,
+    )
+    return match.group(1).strip() if match else None
+
+
+def is_none_section(body: Optional[str]) -> bool:
+    """True when a section body means "no items" (blank/``NONE``/``empty``)."""
+    return body is not None and body.strip().upper() in _NONE_TOKENS
+
+
+def archive_starterfile(
+    starterfile: str,
+    project_root: Optional[str] = None,
+    tmp_dir: Optional[str] = None,
+) -> Optional[Path]:
+    """Move a starterfile into ``tmp/`` with a timestamp; return the new path."""
+    source = Path(starterfile)
+    if not source.exists():
+        return None
+    if tmp_dir is not None:
+        destination_dir = Path(tmp_dir).expanduser()
+    else:
+        if project_root:
+            base = Path(project_root).expanduser()
+        else:
+            base = source.resolve().parent
+        destination_dir = base / "tmp"
+    destination_dir.mkdir(parents=True, exist_ok=True)
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    destination = destination_dir / "{}.{}".format(source.name, stamp)
+    shutil.move(str(source), str(destination))
+    return destination
+
+
 class PseudocodeRenderer:
     """Main controller for pseudocode to code conversion."""
     
-    def __init__(self, starterfile: str = 'starterfile.pseudo', project_root: Optional[str] = None):
+    def __init__(
+        self,
+        starterfile: str = 'starterfile.pseudo',
+        project_root: Optional[str] = None,
+        data_dir: str = 'data',
+        interactive: bool = False,
+        archive: bool = True,
+    ):
         self.starterfile = str(Path(starterfile).expanduser())
         self.project_root = Path(project_root).expanduser().resolve() if project_root else None
         self._project_root_explicit = project_root is not None
+        self.data_dir = data_dir
+        self.interactive = interactive
+        self.archive = archive
         self.mode = None
         self.converted_files: List[str] = []
+        self.created_databases: List[Path] = []
         self.warnings: List[str] = []
         self.errors: List[str] = []
     
@@ -212,16 +267,19 @@ class PseudocodeRenderer:
             raise ValueError(f"PSEUDOCODE path escapes project root: {filepath}") from exc
         return resolved
 
-    def prepare_mode_a_files(self, file_pseudocodes: Dict[str, str]) -> Tuple[bool, List[str]]:
+    def prepare_mode_a_files(self, file_pseudocodes: Dict[str, str], repomap_none: bool = False) -> Tuple[bool, List[str]]:
         """Seed REPOMAP directories, then create missing header-defined files."""
         report = []
-        repomap = parse_repomap(self.starterfile)
-        # Blueprint creation only seeds directories; REPOMAP file entries have
-        # no effect on which files are created.
-        success, message = create_blueprint(repomap, project_root=str(self.project_root or Path.cwd()))
-        if not success:
-            self.errors.append(message)
-            return False, [f"  ✗ {message}"]
+        if repomap_none:
+            report.append("  - REPOMAP is NONE: skipping directory seeding")
+        else:
+            repomap = parse_repomap(self.starterfile)
+            # Blueprint creation only seeds directories; REPOMAP file entries
+            # have no effect on which files are created.
+            success, message = create_blueprint(repomap, project_root=str(self.project_root or Path.cwd()))
+            if not success:
+                self.errors.append(message)
+                return False, [f"  ✗ {message}"]
 
         for filepath in file_pseudocodes:
             try:
@@ -265,55 +323,134 @@ class PseudocodeRenderer:
         print("MODE A: Fresh Project Initialization")
         print("="*60)
         
+        # Read the section bodies so NONE/empty can skip work deliberately.
+        content = Path(self.starterfile).read_text(encoding="utf-8")
+        pseudocode_body = _extract_section_body(content, "PSEUDOCODE")
+        repomap_body = _extract_section_body(content, "REPOMAP")
+        databases_body = _extract_section_body(content, "DATABASES")
+        pseudocode_none = is_none_section(pseudocode_body)
+        repomap_none = repomap_body is None or is_none_section(repomap_body)
+        databases_none = databases_body is None or is_none_section(databases_body)
+
         # Step 1: Parse starterfile.pseudo
         print("\n[Step 1] Extracting pseudocode from starterfile.pseudo...")
-        file_pseudocodes = self.parse_starterfile()
+        file_pseudocodes = {} if pseudocode_none else self.parse_starterfile()
         specifications = self.parse_specifications()
-        
-        if not file_pseudocodes and not specifications:
+
+        if pseudocode_none:
+            print(
+                "  PSEUDOCODE is NONE: assuming code was already generated; "
+                "skipping generation."
+            )
+        elif not file_pseudocodes and not specifications:
             self.errors.append("No source pseudocode or project specifications found in starterfile")
             return False
         
         print("  Found {} source files and {} project specifications".format(
             len(file_pseudocodes), len(specifications)
         ))
-        
-        # Step 2: Seed directories and create files using header paths.
-        print("\n[Step 2] Preparing project structure from REPOMAP and PSEUDOCODE...")
-        prepared, preparation_report = self.prepare_mode_a_files(file_pseudocodes)
-        for line in preparation_report:
-            print(line)
-        if not prepared:
-            return False
 
-        # Step 3: Verify header-defined files.
-        print("\n[Step 3] Verifying PSEUDOCODE files...")
-        verified, report = self.verify_mode_a_setup(file_pseudocodes)
-        for line in report:
-            print(line)
-        
-        if not verified:
-            print(f"\n✗ Verification failed. Cannot proceed with code generation.")
+        if not pseudocode_none:
+            # Step 2: Seed directories and create files using header paths.
+            print("\n[Step 2] Preparing project structure from REPOMAP and PSEUDOCODE...")
+            prepared, preparation_report = self.prepare_mode_a_files(
+                file_pseudocodes, repomap_none=repomap_none
+            )
+            for line in preparation_report:
+                print(line)
+            if not prepared:
+                return False
+
+            # Step 3: Verify header-defined files.
+            print("\n[Step 3] Verifying PSEUDOCODE files...")
+            verified, report = self.verify_mode_a_setup(file_pseudocodes)
+            for line in report:
+                print(line)
+
+            if not verified:
+                print(f"\n✗ Verification failed. Cannot proceed with code generation.")
+                return False
+
+        # Step 3b: Create SQLite databases from the DATABASES section.
+        if not self.create_databases(skip=databases_none):
             return False
         
         # Step 4: Convert pseudocode to real code
-        print("\n[Step 4] Converting pseudocode to real code...")
-        if not self.convert_pseudocodes(file_pseudocodes):
-            self.warnings.append(
-                "starterfile.pseudo was kept because one or more files were not generated"
-            )
-            print("\nGeneration incomplete; starterfile.pseudo has been preserved.")
-            return False
-        
-        # Step 5: Cleanup - Delete starterfile.pseudo
-        print("\n[Step 5] Cleanup: Removing starterfile.pseudo...")
-        try:
-            Path(self.starterfile).unlink()
-            print(f"  ✓ Deleted {self.starterfile}")
-        except Exception as e:
-            self.warnings.append(f"Failed to delete starterfile.pseudo: {e}")
-        
+        if not pseudocode_none:
+            print("\n[Step 4] Converting pseudocode to real code...")
+            if not self.convert_pseudocodes(file_pseudocodes):
+                self.warnings.append(
+                    "starterfile.pseudo was kept because one or more files were not generated"
+                )
+                print("\nGeneration incomplete; starterfile.pseudo has been preserved.")
+                return False
+
+        # Step 5: Archive starterfile.pseudo (timestamped) into the tmp folder.
+        if self.archive:
+            self._archive_starterfile()
+
         return True
+
+    def create_databases(self, skip: bool = False) -> bool:
+        """Create SQLite databases (and their ``.sql`` schemas) from DATABASES."""
+        if skip:
+            print("\n[Step 3b] DATABASES is NONE: skipping database creation.")
+            return True
+
+        print("\n[Step 3b] Creating SQLite schemas and databases...")
+        try:
+            from .sql_schema_creator import DatabaseSpecError, create_schema_files
+        except ImportError:  # pragma: no cover - direct-script execution
+            from sql_schema_creator import DatabaseSpecError, create_schema_files
+
+        project_root = self.project_root or Path.cwd()
+        try:
+            schemas = create_schema_files(Path(self.starterfile), project_root)
+        except (OSError, DatabaseSpecError) as exc:
+            self.errors.append("Failed to create SQL schemas: {}".format(exc))
+            print("  ✗ {}".format(exc))
+            return False
+
+        if not schemas:
+            print("  (no database definitions found)")
+            return True
+
+        try:
+            from data_handler import create_databases as _create_databases
+        except ImportError:  # pragma: no cover - data_handler is always packaged
+            self.warnings.append("data_handler unavailable; .db files were not created")
+            print("  ⚠ data_handler unavailable; databases not created")
+            return True
+
+        try:
+            created = _create_databases(
+                str(project_root), data_dir=self.data_dir, interactive=self.interactive
+            )
+        except Exception as exc:
+            self.errors.append("Database creation failed: {}".format(exc))
+            print("  ✗ {}".format(exc))
+            return False
+
+        self.created_databases = list(created)
+        for path in created:
+            print("  ✓ Created database {}".format(path))
+        return True
+
+    def _archive_starterfile(self) -> None:
+        """Move the starterfile into ``tmp/`` with a timestamp, on success."""
+        if not Path(self.starterfile).exists():
+            return
+        print("\n[Step 5] Archiving starterfile.pseudo...")
+        try:
+            destination = archive_starterfile(
+                self.starterfile,
+                project_root=str(self.project_root) if self.project_root else None,
+            )
+            if destination is not None:
+                print("  ✓ Moved {} -> {}".format(self.starterfile, destination))
+        except OSError as exc:
+            self.warnings.append("Failed to archive starterfile.pseudo: {}".format(exc))
+            print("  ⚠ Could not archive starterfile: {}".format(exc))
     
     # ==================== MODE B: Existing Project ====================
     

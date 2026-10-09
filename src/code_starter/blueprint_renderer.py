@@ -34,8 +34,9 @@ def parse_repomap(filepath: str) -> Dict[str, List[str]]:
         with open(filepath, 'r') as f:
             content = f.read()
         
-        # Extract REPOMAP section (between # REPOMAP and # PSEUDOCODE)
-        repomap_match = re.search(r'# REPOMAP\n(.*?)(?=\n# PSEUDOCODE|\Z)', content, re.DOTALL)
+        # Extract the REPOMAP section, which ends at the next top-level
+        # section header (e.g. # DATABASES, # PSEUDOCODE, # SPECIFICATIONS).
+        repomap_match = re.search(r'# REPOMAP\n(.*?)(?=\n#\s+\w|\Z)', content, re.DOTALL)
         if not repomap_match:
             return {'directories': [], 'files': []}
         

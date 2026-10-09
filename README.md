@@ -1,6 +1,8 @@
 # Code Assistant
 
-A comprehensive local coding assistant system with three integrated modules for code generation, debugging, and patching.
+A comprehensive local coding assistant system with modular tools for
+scaffolding repositories, generating code, applying patches, and producing
+documentation.
 
 - **Author/Maintainer/Developer:** Olga Moreira
 - **License:** MIT
@@ -19,14 +21,18 @@ code as a draft and review it before use.
 
 ### Modules
 
-- **`code_starter`** builds a target repository from `starterfile.pseudo`.
-  The creator defines a REPOMAP and source pseudocode. The renderer creates
-  directories and spec files, then converts source pseudocode with Ollama.
+- **`code_starter`** builds a target repository from an approved
+  `starterfile.pseudo`. The creator defines a REPOMAP, optional `# DATABASES`,
+  and source pseudocode. The `pipeline` runs a preflight check, then creates
+  directories and spec files, builds SQLite databases, converts source
+  pseudocode with Ollama, analyzes the result, and documents the repository.
 - **`code_converter`** reads UTF-8 research notes and asks an LLM to produce
   `patch.pseudo` with `#PATCHES` and `#NEW SCRIPTS` sections, and converts a
   single code-devoided file into real code for its extension.
-- **`code_analyzer`** parses and applies those patch entries. Conversion and
-  patch application are separate operations.
+- **`code_analyzer`** parses and applies those patch entries, and provides the
+  pre-generation `pseudocode_analyzer` that checks a starterfile's sections,
+  approval marker, and path structure before any code is written. Conversion
+  and patch application are separate operations.
 - **`code_refractor`** provides APIs for checking and carrying out structural
   changes such as moving modules and updating references. This area is still
   evolving.
@@ -36,11 +42,13 @@ code as a draft and review it before use.
   Python benchmark harness under the target repository's `benchmark/` folder.
 - **`repo_documenter`** scans Python packages under a target's `src/` and
   creates or updates documentation in its root `docs/` folder.
+- **`data_handler`** creates SQLite database files from the `.sql` schemas
+  generated under `src/data_handler/sqlite_schema/`.
 - **`shared`** contains cross-cutting services such as LLM access,
   configuration, logging, and utilities.
 
-`tools/`, `data_handler/`, and `assistant_contracts/` are reserved support
-packages with little or no implementation currently.
+`tools/` and `assistant_contracts/` are reserved support packages with little
+or no implementation currently.
 
 The root-level `ui/` and `benchmark/` folders described above are defaults for
 generated repositories; the assistant itself keeps those tools under `src/`.
@@ -51,6 +59,7 @@ generated repositories; the assistant itself keeps those tools under `src/`.
 
 - Python 3.8 or newer.
 - pip and Python virtual environments.
+- The `sqlite3` command-line tool, used to build databases from `# DATABASES`.
 - Ollama and the `deepseek-coder:6.7b` model for commands that use local LLM
   generation. UI and benchmark scaffolds can also be generated without an LLM.
 
@@ -87,16 +96,27 @@ Choose a target project root, enter the user-designed module names for its
 `# SPECIFICATIONS` section for `benchmark/benchmark.pseudo` and
 `ui/uidesign.pseudo`.
 
-Render the starterfile from any working directory:
+Generation only runs for an approved starterfile (one carrying a
+`# STATUS: APPROVED` marker). Run the full pipeline from the repository root:
+
+```bash
+bash scripts/run_pipeline.sh /path/to/new_assistant --data-dir data
+```
+
+The pipeline runs a static preflight (required sections, approval marker,
+`sqlite3` and Ollama availability, and a `code_analyzer` starterfile review),
+then runs `code_starter` (skeleton, databases, source generation),
+`code_analyzer`, and `repo_documenter`, and writes a smoke test to `tmp/`.
+Source generation uses the configured Ollama model. On success the starterfile
+is moved to `tmp/` with a timestamp; on failure it is left in place. See
+[user_manual.md](user_manual.md) for the detailed workflow.
+
+The renderer can also be run on its own:
 
 ```bash
 python -m code_starter.pseudocode_renderer \
   /path/to/new_assistant/starterfile.pseudo
 ```
-
-Source generation uses the configured Ollama model. On successful completion,
-the renderer removes the starterfile; keep a copy if you want to preserve the
-specification. See [user_manual.md](user_manual.md) for the detailed workflow.
 
 ### Other common workflows
 
@@ -161,7 +181,7 @@ code_assistant/
 │   ├── repo_documenter/     # Target-repository documentation
 │   ├── shared/              # Shared infrastructure
 │   ├── tools/               # Reserved support package
-│   ├── data_handler/        # Reserved support package
+│   ├── data_handler/        # SQLite schema and database creation
 │   └── assistant_contracts/ # Reserved support package
 ├── tests/                   # Automated tests
 ├── user_manual.md

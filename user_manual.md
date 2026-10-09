@@ -52,25 +52,51 @@ The standard layout includes `docs/`, `scripts/`, `config/`, `ui/`,
 `# PROJECT_ROOT: .` and relative paths, so it can be rendered from any working
 directory.
 
-New starterfiles have two separate content sections:
+New starterfiles have these sections:
 
-- `# PSEUDOCODE` describes source files to generate as code.
+- `# REPOMAP` describes the directory tree to seed. `NONE` infers the structure
+  from the `# PSEUDOCODE` headers.
+- `# DATABASES` describes SQLite databases and tables. `NONE` means the
+  repository has no databases.
+- `# PSEUDOCODE` describes source files to generate as code. `NONE` means the
+  source code was already generated and generation is skipped.
 - `# SPECIFICATIONS` describes editable pseudo files to place into the target
   repository, currently `benchmark/benchmark.pseudo` and `ui/uidesign.pseudo`.
+- `# STATUS: APPROVED` must be present before the pipeline generates code.
 
-Render a starterfile with the pseudocode renderer:
+Run the full pipeline (recommended) for an approved starterfile:
+
+```bash
+bash scripts/run_pipeline.sh /path/to/new_assistant --data-dir data
+```
+
+The pipeline runs four stages:
+
+1. **Preflight** (static, no generation): checks for the approval marker, the
+   required sections, `sqlite3` and Ollama availability, and runs
+   `code_analyzer`'s `pseudocode_analyzer`. It writes
+   `docs/pseudocode_report.md` and a tagged copy of the starterfile under
+   `tmp/`. Blocking errors stop before any code is written.
+2. **code_starter**: seeds REPOMAP directories, creates specification files,
+   builds the SQLite schema files and `.db` files under the data directory, and
+   converts `# PSEUDOCODE` entries with Ollama.
+3. **code_analyzer**: analyzes the generated code.
+4. **repo_documenter**: writes project documentation under `docs/`.
+
+A smoke test (compile generated modules, verify each database) is written to
+`<project-root>/tmp/`. The `--data-dir` option (default `data`) selects the
+database folder. On overall success the starterfile is moved to `tmp/` with a
+timestamp; on failure it is left in place.
+
+The renderer alone can also be run:
 
 ```bash
 python -m code_starter.pseudocode_renderer /path/to/new_assistant/starterfile.pseudo
 ```
 
 An optional `--project-root /path/to/new_assistant` overrides its declared
-root. The renderer creates the directory structure and specification files,
-then uses Ollama to generate source code for entries under `# PSEUDOCODE`.
-After every source conversion succeeds, it removes the starterfile. Keep a
-copy if you want to retain the original specification. Existing specification
-files are preserved, and existing source files must be empty to pass the
-renderer’s initial check.
+root. Existing specification files are preserved, and existing source files
+must be empty to pass the renderer’s initial check.
 
 Legacy starterfiles without `# PROJECT_ROOT:` retain current-working-directory
 semantics. The standalone `blueprint_renderer` only creates directories; it
@@ -83,7 +109,8 @@ does not generate source code or specification file contents.
 - `GitHubRepoPlanner` interactively creates repository packaging files,
   including `setup.py` and `pyproject.toml`; Docker files are optional.
 - `sql_schema_creator` reads a `# DATABASES` section and creates SQL schema
-  files under `src/data_handler/sqlite_schema/`.
+  files under `src/data_handler/sqlite_schema/`; `data_handler` then builds the
+  `.db` files from those schemas.
 
 These helpers can be imported from `code_starter`; their interactive workflows
 and generated files should be reviewed before use.
@@ -239,18 +266,21 @@ reviewed carefully and backed by version control.
 
 The project keeps separate tasks in separate `src/` packages:
 
-- `code_starter`: repository scaffolding and source generation.
+- `code_starter`: repository scaffolding, database and source generation, and
+  the end-to-end `pipeline`.
 - `code_converter`: research notes to patch pseudocode.
-- `code_analyzer`: patch parsing and application.
+- `code_analyzer`: patch parsing and application, plus pre-generation
+  starterfile analysis (`pseudocode_analyzer`).
 - `code_refractor`: structural moves and reference updates.
 - `ui_builder`: UI specifications and UI generation.
 - `benchmarker`: benchmark specifications and benchmark code.
 - `repo_documenter`: target-repository documentation.
+- `data_handler`: SQLite schema and database creation.
 - `shared`: cross-cutting services such as configuration, logging, and LLM
   access.
 
-`tools/`, `data_handler/`, and `assistant_contracts/` are reserved support
-packages and currently have no substantial implementation.
+`tools/` and `assistant_contracts/` are reserved support packages and
+currently have no substantial implementation.
 
 ## Troubleshooting
 
@@ -264,3 +294,8 @@ packages and currently have no substantial implementation.
   path. Choose another path or resolve the conflict manually.
 - **Starterfile path issues:** new-format paths are relative to the folder
   containing the starterfile; legacy files use the current working directory.
+- **`sqlite3` not found:** install the `sqlite3` command-line tool. The
+  pipeline preflight requires it to build databases from `# DATABASES`.
+- **Generation blocked by preflight:** set `# STATUS: APPROVED`, then review
+  and resolve the errors in `docs/pseudocode_report.md`; the tagged copy under
+  `tmp/` marks the offending lines.

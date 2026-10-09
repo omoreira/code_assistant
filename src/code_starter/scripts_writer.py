@@ -206,6 +206,7 @@ show_next_steps() {
     echo ""
     echo "2. Or run specific modules:"
     echo "   ${GREEN}./run_starter.sh${NC}"
+    echo "   ${GREEN}./run_analyzer.sh${NC}"
     echo ""
     echo "3. View documentation:"
     echo "   ${GREEN}cat ../README.md${NC}"
@@ -247,7 +248,7 @@ main "$@"
         """Write run script for a specific module.
 
         Args:
-            module_name: Name of the module (starter, debugger, patcher)
+            module_name: Name of the module (starter, analyzer)
 
         Returns:
             Path to created script
@@ -389,13 +390,13 @@ main "$@"
         """Generate all standard scripts.
 
         Args:
-            modules: List of module names (default: starter, debugger, patcher, refractor)
+            modules: List of module names (default: starter, analyzer)
 
         Returns:
             Dictionary mapping script names to their paths
         """
         if modules is None:
-            modules = ["starter", "debugger", "patcher", "refractor"]
+            modules = ["starter", "analyzer"]
 
         # Create scripts directory
         self.create_scripts_directory()
