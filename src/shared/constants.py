@@ -14,7 +14,7 @@ PROJECT_LICENSE = "MIT"
 # Modules
 MODULES = [
     "code_starter",
-    "code_debugger",
+    "code_analyzer",
     "code_patcher"
 ]
 
@@ -28,8 +28,15 @@ SHARED_PATHS = [
 # LLM Configuration
 DEFAULT_LLM_PROVIDER = "ollama"
 DEFAULT_LLM_MODEL = "deepseek-coder:6.7b"
+
+# Role-based LLM models
+# Code analysis (structure, lint triage, explanation) uses Qwen 3.
+CODE_ANALYSIS_MODEL = "qwen3:14b"
+# Reasoning/debugging uses DeepSeek-R1.
+REASONING_MODEL = "deepseek-r1:14b"
 DEFAULT_LLM_ENDPOINT = "http://localhost:11434"
-DEFAULT_LLM_TIMEOUT = 300
+# Local model generation is slow; allow up to 10 minutes.
+DEFAULT_LLM_TIMEOUT = 600
 DEFAULT_LLM_TEMPERATURE = 0.7
 DEFAULT_LLM_MAX_TOKENS = 2048
 
@@ -128,7 +135,7 @@ TIMEOUTS = {
     "default": 30,
     "long": 300,
     "short": 5,
-    "llm": 300,
+    "llm": 600,
     "api": 30,
 }
 

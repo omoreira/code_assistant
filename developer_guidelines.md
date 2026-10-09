@@ -16,7 +16,7 @@ functional areas are:
 | --- | --- |
 | `code_starter` | Define a starterfile, create a repository structure, and generate source files |
 | `code_converter` | Convert long research notes into `patch.pseudo` |
-| `code_debugger` | Parse/apply `#PATCHES` and create `#NEW SCRIPTS` entries |
+| `code_analyzer` | Parse/apply `#PATCHES` and create `#NEW SCRIPTS` entries |
 | `code_refractor` | Verify and perform structural path/module changes |
 | `ui_builder` | Create `ui/uidesign.pseudo` and generate a UI in a target repository |
 | `benchmarker` | Create `benchmark/benchmark.pseudo` and generate a benchmark harness |
@@ -57,7 +57,7 @@ generation. Keep their parsing and output destinations explicit.
 src/
 ├── code_starter/
 ├── code_converter/
-├── code_debugger/
+├── code_analyzer/
 ├── code_refractor/
 ├── ui_builder/
 ├── benchmarker/
@@ -132,7 +132,7 @@ to be empty before conversion.
 
 `LongContextReader` reads UTF-8 note files, chunks long text, summarizes the
 chunks through an injected LLM interface, and asks for `#PATCHES` plus
-`#NEW SCRIPTS`. `code_debugger.patch_file` validates paths and diffs before it
+`#NEW SCRIPTS`. `code_analyzer.patch_file` validates paths and diffs before it
 writes any entry. Patch application rejects path traversal and refuses to
 overwrite files designated as new scripts.
 
@@ -191,7 +191,7 @@ Before accepting a change, review the diff for:
 
 ## 8. Current implementation limits
 
-- `code_debugger` currently implements patch parsing and application; it is
+- `code_analyzer` currently implements patch parsing and application; it is
   not a complete automated debugging-analysis suite.
 - `code_converter` proposes pseudocode and does not itself apply edits.
 - `code_refractor` has verification and refactoring APIs, but should be treated

@@ -24,10 +24,10 @@ code as a draft and review it before use.
   directories and spec files, then converts source pseudocode with Ollama.
 - **`code_converter`** reads UTF-8 research notes and asks an LLM to produce
   `patch.pseudo` with `#PATCHES` and `#NEW SCRIPTS` sections.
-- **`code_debugger`** parses and applies those patch entries. Conversion and
+- **`code_analyzer`** parses and applies those patch entries. Conversion and
   patch application are separate operations.
 - **`code_patcher`** is a retained development placeholder; patch application
-  currently lives in `code_debugger`.
+  currently lives in `code_analyzer`.
 - **`code_refractor`** provides APIs for checking and carrying out structural
   changes such as moving modules and updating references. This area is still
   evolving.
@@ -111,7 +111,7 @@ python -m code_converter.longtext_pseudo_converter research.md \
 Apply a patch plan through the API after reviewing it:
 
 ```python
-from code_debugger import apply_patch_file
+from code_analyzer import apply_patch_file
 
 apply_patch_file("patch.pseudo", project_root="/path/to/repository", dry_run=True)
 ```
@@ -149,7 +149,7 @@ code_assistant/
 ├── src/
 │   ├── code_starter/        # Project scaffolding and source generation
 │   ├── code_converter/      # Research notes to patch pseudocode
-│   ├── code_debugger/       # Patch parsing and application
+│   ├── code_analyzer/       # Patch parsing and application
 │   ├── code_patcher/        # Development placeholder
 │   ├── code_refractor/      # Structural refactoring tools
 │   ├── ui_builder/          # Target-repository UI generation

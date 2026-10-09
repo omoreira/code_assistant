@@ -1,9 +1,9 @@
 #!/bin/bash
 
 ################################################################################
-# Code Debugger - Quick Launch Script
-# Purpose: Run code_debugger module (currently in development)
-# Usage: ./run_debugger.sh [options]
+# Code Analyzer - Quick Launch Script
+# Purpose: Run code_analyzer module (currently in development)
+# Usage: ./run_analyzer.sh [options]
 ################################################################################
 
 set -e
@@ -73,11 +73,11 @@ install_deps() {
 
 show_help() {
     echo ""
-    echo -e "${BLUE}Code Debugger - Quick Launch${NC}"
+    echo -e "${BLUE}Code Analyzer - Quick Launch${NC}"
     echo ""
-    echo "Usage: ./run_debugger.sh [options]"
+    echo "Usage: ./run_analyzer.sh [options]"
     echo ""
-    echo "⚠️  Note: code_debugger is currently under development"
+    echo "⚠️  Note: code_analyzer is currently under development"
     echo ""
     echo "Options:"
     echo "  -h, --help         Show this help message"
@@ -89,7 +89,7 @@ show_help() {
 
 show_info() {
     echo ""
-    echo -e "${BLUE}Code Debugger Module${NC}"
+    echo -e "${BLUE}Code Analyzer Module${NC}"
     echo ""
     echo -e "${YELLOW}Current Status: IN DEVELOPMENT${NC}"
     echo ""
@@ -110,16 +110,16 @@ show_info() {
     echo "  Phase 4: Suggestions engine"
     echo "  Phase 5: Test generation"
     echo ""
-    echo "For more details, see: docs/code_debugger/README.md"
+    echo "For more details, see: docs/code_analyzer/README.md"
     echo ""
 }
 
 show_docs() {
     echo ""
-    echo -e "${BLUE}Code Debugger Documentation${NC}"
+    echo -e "${BLUE}Code Analyzer Documentation${NC}"
     echo ""
     echo "Main Documentation:"
-    echo "  • docs/code_debugger/README.md      - Module overview"
+    echo "  • docs/code_analyzer/README.md      - Module overview"
     echo "  • docs/ARCHITECTURE.md              - System architecture"
     echo "  • docs/CONTRIBUTING.md              - How to contribute"
     echo ""
@@ -148,10 +148,10 @@ show_status() {
         echo -e "  Dependencies:        ${YELLOW}⚠ Not installed${NC}"
     fi
     
-    if python3 -c "import code_debugger" 2>/dev/null; then
-        echo -e "  code_debugger:       ${GREEN}✓ Available${NC}"
+    if python3 -c "import code_analyzer" 2>/dev/null; then
+        echo -e "  code_analyzer:       ${GREEN}✓ Available${NC}"
     else
-        echo -e "  code_debugger:       ${RED}✗ Not found${NC}"
+        echo -e "  code_analyzer:       ${RED}✗ Not found${NC}"
     fi
     
     echo ""
@@ -183,12 +183,12 @@ main() {
             install_deps
             
             echo ""
-            print_warning "code_debugger is currently under development"
+            print_warning "code_analyzer is currently under development"
             echo ""
             echo "Available commands:"
-            echo "  ./run_debugger.sh --info     - Show module information"
-            echo "  ./run_debugger.sh --docs     - Show documentation"
-            echo "  ./run_debugger.sh --status   - Check environment"
+            echo "  ./run_analyzer.sh --info     - Show module information"
+            echo "  ./run_analyzer.sh --docs     - Show documentation"
+            echo "  ./run_analyzer.sh --status   - Check environment"
             echo ""
             exit 0
             ;;

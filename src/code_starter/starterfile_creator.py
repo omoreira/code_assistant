@@ -120,7 +120,7 @@ class StarterfileCreator:
         for directory in BASE_DIRECTORIES:
             self._ensure_project_directory(directory)
         module_names = input(
-            "Module names under src/ (comma-separated, e.g. code_starter, code_debugger): "
+            "Module names under src/ (comma-separated, e.g. code_starter, code_analyzer): "
         )
         for module in (name.strip() for name in module_names.split(",")):
             if module:

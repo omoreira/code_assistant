@@ -27,14 +27,14 @@ test:
 	PYTHONPATH=src pytest tests/ -v
 
 test-cov:
-	PYTHONPATH=src pytest tests/ -v --cov=code_starter --cov=code_debugger --cov=code_patcher --cov=code_refractor --cov=shared --cov-report=html --cov-report=term
+	PYTHONPATH=src pytest tests/ -v --cov=code_starter --cov=code_analyzer --cov=code_patcher --cov=code_refractor --cov=shared --cov-report=html --cov-report=term
 
 lint:
-	flake8 src/code_starter src/code_debugger src/code_patcher src/code_refractor src/shared src/tools src/db_master_handler src/assistant_contracts tests --max-line-length=88
-	PYTHONPATH=src pylint code_starter code_debugger code_patcher code_refractor shared --disable=R0913,R0914,C0114,C0115,C0116
+	flake8 src/code_starter src/code_analyzer src/code_patcher src/code_refractor src/shared src/tools src/db_master_handler src/assistant_contracts tests --max-line-length=88
+	PYTHONPATH=src pylint code_starter code_analyzer code_patcher code_refractor shared --disable=R0913,R0914,C0114,C0115,C0116
 
 format:
-	black src/code_starter src/code_debugger src/code_patcher src/code_refractor src/shared src/tools src/db_master_handler src/assistant_contracts tests
+	black src/code_starter src/code_analyzer src/code_patcher src/code_refractor src/shared src/tools src/db_master_handler src/assistant_contracts tests
 
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true

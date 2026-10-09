@@ -15,16 +15,16 @@ class LLMInterface:
     
     def __init__(
         self,
-        model: str = "deepseek-coder:6.7b",
+        model: str = "deepseek-r1:14b",
         api_endpoint: str = "http://localhost:11434",
-        timeout: int = 300,
+        timeout: int = 600,
         temperature: float = 0.7,
         max_tokens: int = 2048
     ):
         """Initialize LLM interface.
         
         Args:
-            model: Model name (default: deepseek-coder:6.7b)
+            model: Model name (default: deepseek-r1:14b)
             api_endpoint: API endpoint URL (default: localhost ollama)
             timeout: Request timeout in seconds
             temperature: Model temperature (0.0-1.0)

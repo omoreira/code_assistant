@@ -12,15 +12,15 @@ project:
 modules:
   enabled:
     - code_starter
-    - code_debugger
+    - code_analyzer
     - code_patcher
   
   code_starter:
     description: "Interactive project creation and code generation"
     enabled: true
   
-  code_debugger:
-    description: "Code debugging and analysis utilities"
+  code_analyzer:
+    description: "Code analysis and debugging utilities"
     enabled: true
   
   code_patcher:
@@ -30,8 +30,12 @@ modules:
 llm:
   provider: "ollama"
   model: "deepseek-coder:6.7b"
+  models:
+    analysis: "qwen3:14b"
+    reasoning: "deepseek-r1:14b"
+    generation: "deepseek-coder:6.7b"
   api_endpoint: "http://localhost:11434"
-  timeout: 300
+  timeout: 600
   temperature: 0.7
   max_tokens: 2048
 

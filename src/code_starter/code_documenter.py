@@ -389,7 +389,7 @@ Access configuration consistently:
 ```python
 from shared.config import get_config
 
-timeout = get_config('llm.timeout', default=300)
+timeout = get_config('llm.timeout', default=600)
 model = get_config('llm.model', default='default-model')
 ```
 

@@ -83,7 +83,7 @@ show_menu() {
     echo -e "${GREEN}Available Modules:${NC}"
     echo ""
     echo "  1) code_starter     - Project creation and code generation"
-    echo "  2) code_debugger    - Code analysis and debugging (in development)"
+    echo "  2) code_analyzer    - Code analysis and debugging (in development)"
     echo "  3) code_patcher     - Code refactoring and patching (in development)"
     echo "  4) code_refractor   - Refactoring verification and updates"
     echo "  5) Setup/Status     - Setup environment or check status"
@@ -127,16 +127,16 @@ creator.run_interactive()
 "
 }
 
-run_debugger() {
+run_analyzer() {
     echo ""
-    echo -e "${YELLOW}code_debugger is currently under development.${NC}"
+    echo -e "${YELLOW}code_analyzer is currently under development.${NC}"
     echo ""
     echo "Planned features:"
     echo "  • Code quality analysis"
     echo "  • Bug detection and diagnosis"
     echo "  • Performance profiling"
     echo ""
-    echo "See docs/code_debugger/README.md for more information."
+    echo "See docs/code_analyzer/README.md for more information."
     echo ""
 }
 
@@ -181,7 +181,7 @@ main() {
                 run_starter
                 ;;
             2)
-                run_debugger
+                run_analyzer
                 ;;
             3)
                 run_patcher

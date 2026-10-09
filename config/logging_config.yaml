@@ -45,7 +45,7 @@ loggers:
     handlers: [console, file]
     propagate: false
   
-  code_debugger:
+  code_analyzer:
     level: INFO
     handlers: [console, file]
     propagate: false

@@ -269,7 +269,7 @@ refactorer = CodeRefactorer()
 ```
 
 ### With Other Modules
-- Works with code_debugger for analyzing refactored code
+- Works with code_analyzer for analyzing refactored code
 - Works with code_patcher for applying refactoring patches
 - Uses shared/ utilities for logging and config
 

@@ -120,12 +120,12 @@ file contents. Paths are relative to the target repository root.
 
 ## 4. Apply a patch plan
 
-Patch application belongs to `code_debugger`. The public API validates paths,
+Patch application belongs to `code_analyzer`. The public API validates paths,
 applies strict unified-diff context matching, and refuses to overwrite a file
 listed under `#NEW SCRIPTS`:
 
 ```python
-from code_debugger import apply_patch_file
+from code_analyzer import apply_patch_file
 
 changed = apply_patch_file(
     "patch.pseudo",
@@ -145,7 +145,7 @@ All entries are prepared and validated before any are written. Keep a version
 control checkpoint and inspect the patch first; successful application writes
 the changed files.
 
-`code_debugger` currently provides the patch parser and applier. Broader code
+`code_analyzer` currently provides the patch parser and applier. Broader code
 analysis and debugging assistance described as future functionality is not
 implemented as a complete user workflow yet.
 
@@ -241,7 +241,7 @@ The project keeps separate tasks in separate `src/` packages:
 
 - `code_starter`: repository scaffolding and source generation.
 - `code_converter`: research notes to patch pseudocode.
-- `code_debugger`: patch parsing and application.
+- `code_analyzer`: patch parsing and application.
 - `code_refractor`: structural moves and reference updates.
 - `ui_builder`: UI specifications and UI generation.
 - `benchmarker`: benchmark specifications and benchmark code.

@@ -1,6 +1,6 @@
 """Code analysis, debugging, and applying user-authored code patches."""
 
-from code_debugger.patch_file import (
+from code_analyzer.patch_file import (
     PatchEntry,
     PatchFile,
     apply_patch_file,

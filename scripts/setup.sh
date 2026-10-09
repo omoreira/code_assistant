@@ -197,7 +197,7 @@ show_next_steps() {
     echo ""
     echo "2. Or run specific modules:"
     echo "   ${GREEN}./run_starter.sh${NC}"
-    echo "   ${GREEN}./run_debugger.sh${NC}"
+    echo "   ${GREEN}./run_analyzer.sh${NC}"
     echo "   ${GREEN}./run_patcher.sh${NC}"
     echo ""
     echo "3. Or activate the virtual environment manually:"
