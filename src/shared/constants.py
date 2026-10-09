@@ -14,8 +14,7 @@ PROJECT_LICENSE = "MIT"
 # Modules
 MODULES = [
     "code_starter",
-    "code_analyzer",
-    "code_patcher"
+    "code_analyzer"
 ]
 
 SHARED_PATHS = [

@@ -83,7 +83,7 @@ does not generate source code or specification file contents.
 - `GitHubRepoPlanner` interactively creates repository packaging files,
   including `setup.py` and `pyproject.toml`; Docker files are optional.
 - `sql_schema_creator` reads a `# DATABASES` section and creates SQL schema
-  files under `src/db_master_handler/sqlite_schema/`.
+  files under `src/data_handler/sqlite_schema/`.
 
 These helpers can be imported from `code_starter`; their interactive workflows
 and generated files should be reviewed before use.
@@ -249,7 +249,7 @@ The project keeps separate tasks in separate `src/` packages:
 - `shared`: cross-cutting services such as configuration, logging, and LLM
   access.
 
-`tools/`, `db_master_handler/`, and `assistant_contracts/` are reserved support
+`tools/`, `data_handler/`, and `assistant_contracts/` are reserved support
 packages and currently have no substantial implementation.
 
 ## Troubleshooting

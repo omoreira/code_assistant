@@ -1,7 +1,20 @@
-# hybrid_code_generator.py
+"""Code generation (hybrid strategy).
 
+Routes complex requirements to Claude (via Continue) and simpler work to a
+local Qwen 3 model, then validates and polishes the result.
+"""
 
-# Code Generation (Hybrid)
+import ast
+from typing import Dict, List, Optional
+
+import requests
+
+from code_analyzer.hybrid_code_analyzer import (
+    OLLAMA_BASE,
+    OLLAMA_TIMEOUT,
+    QWEN_MODEL,
+    AnalysisResult,
+)
 
 
 def generate_code(
@@ -151,7 +164,7 @@ def _call_claude_via_continue(
     In your Continue config, you would have:
     ```yaml
     customCommands:
-      - name: "bridge\_generate"
+      - name: "bridge_generate"
         prompt: "Generate production code"
         description: "Uses Claude for architecture decisions"
     ```

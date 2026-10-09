@@ -22,7 +22,7 @@ from datetime import datetime
 SHARED_DIRECTORIES = (
     "tools",
     "shared",
-    "db_master_handler",
+    "data_handler",
     "assistant_contracts",
 )
 
@@ -716,7 +716,7 @@ python src/<your_module>/main.py
 {module_tree}
     ├── tools/
     ├── shared/
-    ├── db_master_handler/
+    ├── data_handler/
     └── assistant_contracts/
 ```
 

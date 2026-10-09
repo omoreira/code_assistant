@@ -149,7 +149,7 @@ pip install -r requirements-dev.txt
 {module_tree}
 │   ├── tools/
 │   ├── shared/
-│   ├── db_master_handler/
+│   ├── data_handler/
 │   └── assistant_contracts/
 ├── tests/                   # Test suite
 ├── setup.py                 # Package setup
@@ -248,7 +248,7 @@ project/
 {module_tree}
 │   ├── tools/
 │   ├── shared/
-│   ├── db_master_handler/
+│   ├── data_handler/
 │   └── assistant_contracts/
 └── tests/                   # Test suite
 ```

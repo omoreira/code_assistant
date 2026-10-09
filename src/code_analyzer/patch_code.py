@@ -22,6 +22,7 @@ from pathlib import Path
 from dataclasses import dataclass, asdict, field
 import hashlib
 import shutil
+import re
 from datetime import datetime
 import requests
 
@@ -199,8 +200,8 @@ def _assess_impact_level(removed: int, added: int, modified: int) -> str:
 
 def generate_unified_diff(original: str, patched: str, file_path: str = "code") -> str:
     """Generate unified diff between original and patched code."""
-    orig_lines = original.splitlines(keepends=True)
-    patch_lines = patched.splitlines(keepends=True)
+    orig_lines = original.splitlines()
+    patch_lines = patched.splitlines()
     
     diff = difflib.unified_diff(
         orig_lines,
@@ -210,7 +211,7 @@ def generate_unified_diff(original: str, patched: str, file_path: str = "code") 
         lineterm=""
     )
     
-    return "".join(diff)
+    return "\n".join(diff)
 
 def parse_diff(diff_text: str) -> List[Dict[str, Any]]:
     """Parse unified diff into structured changes."""
@@ -486,4 +487,11 @@ def _validate_patch(code: str, language: str) -> Dict[str, Any]:
         # Additional checks
         if "import *" in code:
             validation["warnings"].append("Wildcard imports detected")
-        if code.count("except:
+        if code.count("except:") > 0:
+            validation["warnings"].append(
+                "Bare 'except:' clauses detected; prefer specific exceptions"
+            )
+        if "eval(" in code or "exec(" in code:
+            validation["warnings"].append("Use of eval/exec detected")
+
+    return validation

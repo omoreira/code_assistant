@@ -29,7 +29,7 @@ BASE_DIRECTORIES = (
     "src",
     "src/tools",
     "src/shared",
-    "src/db_master_handler",
+    "src/data_handler",
     "src/assistant_contracts",
 )
 

@@ -4,7 +4,7 @@ The deliberately small input format uses ``table N name: ...`` and
 ``table N columns:`` records. Column bullets are ``- name: description``;
 columns default to SQLite TEXT, and a column named ``identifier`` becomes the
 table's TEXT primary key. Output is written to
-``<project-root>/src/db_master_handler/sqlite_schema/<database>.sql``.
+``<project-root>/src/data_handler/sqlite_schema/<database>.sql``.
 
 Usage::
 
@@ -164,7 +164,7 @@ def create_schema_files(starterfile: Path, project_root: Path) -> List[Path]:
     """Generate schema SQL files and return their paths."""
     content = starterfile.read_text(encoding="utf-8")
     specs = parse_database_specs(extract_databases_section(content))
-    output_dir = project_root / "src" / "db_master_handler" / "sqlite_schema"
+    output_dir = project_root / "src" / "data_handler" / "sqlite_schema"
     output_dir.mkdir(parents=True, exist_ok=True)
     outputs = []
     for filename, tables in specs:
@@ -180,7 +180,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument(
         "--project-root",
         default=".",
-        help="Project root where src/db_master_handler/sqlite_schema will be created",
+        help="Project root where src/data_handler/sqlite_schema will be created",
     )
     args = parser.parse_args(argv)
     try:

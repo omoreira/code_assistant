@@ -23,11 +23,10 @@ code as a draft and review it before use.
   The creator defines a REPOMAP and source pseudocode. The renderer creates
   directories and spec files, then converts source pseudocode with Ollama.
 - **`code_converter`** reads UTF-8 research notes and asks an LLM to produce
-  `patch.pseudo` with `#PATCHES` and `#NEW SCRIPTS` sections.
+  `patch.pseudo` with `#PATCHES` and `#NEW SCRIPTS` sections, and converts a
+  single code-devoided file into real code for its extension.
 - **`code_analyzer`** parses and applies those patch entries. Conversion and
   patch application are separate operations.
-- **`code_patcher`** is a retained development placeholder; patch application
-  currently lives in `code_analyzer`.
 - **`code_refractor`** provides APIs for checking and carrying out structural
   changes such as moving modules and updating references. This area is still
   evolving.
@@ -40,7 +39,7 @@ code as a draft and review it before use.
 - **`shared`** contains cross-cutting services such as LLM access,
   configuration, logging, and utilities.
 
-`tools/`, `db_master_handler/`, and `assistant_contracts/` are reserved support
+`tools/`, `data_handler/`, and `assistant_contracts/` are reserved support
 packages with little or no implementation currently.
 
 The root-level `ui/` and `benchmark/` folders described above are defaults for
@@ -108,6 +107,12 @@ python -m code_converter.longtext_pseudo_converter research.md \
   --output patch.pseudo
 ```
 
+Convert a single code-devoided file into real code for its file extension:
+
+```bash
+python -m code_converter.pseudofile_converter path/to/module.py
+```
+
 Apply a patch plan through the API after reviewing it:
 
 ```python
@@ -150,14 +155,13 @@ code_assistant/
 │   ├── code_starter/        # Project scaffolding and source generation
 │   ├── code_converter/      # Research notes to patch pseudocode
 │   ├── code_analyzer/       # Patch parsing and application
-│   ├── code_patcher/        # Development placeholder
 │   ├── code_refractor/      # Structural refactoring tools
 │   ├── ui_builder/          # Target-repository UI generation
 │   ├── benchmarker/         # Target-repository benchmark generation
 │   ├── repo_documenter/     # Target-repository documentation
 │   ├── shared/              # Shared infrastructure
 │   ├── tools/               # Reserved support package
-│   ├── db_master_handler/   # Reserved support package
+│   ├── data_handler/        # Reserved support package
 │   └── assistant_contracts/ # Reserved support package
 ├── tests/                   # Automated tests
 ├── user_manual.md

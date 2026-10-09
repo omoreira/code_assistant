@@ -84,10 +84,9 @@ show_menu() {
     echo ""
     echo "  1) code_starter     - Project creation and code generation"
     echo "  2) code_analyzer    - Code analysis and debugging (in development)"
-    echo "  3) code_patcher     - Code refactoring and patching (in development)"
-    echo "  4) code_refractor   - Refactoring verification and updates"
-    echo "  5) Setup/Status     - Setup environment or check status"
-    echo "  6) Exit             - Exit program"
+    echo "  3) code_refractor   - Refactoring verification and updates"
+    echo "  4) Setup/Status     - Setup environment or check status"
+    echo "  5) Exit             - Exit program"
     echo ""
 }
 
@@ -140,19 +139,6 @@ run_analyzer() {
     echo ""
 }
 
-run_patcher() {
-    echo ""
-    echo -e "${YELLOW}code_patcher is currently under development.${NC}"
-    echo ""
-    echo "Planned features:"
-    echo "  • Code refactoring"
-    echo "  • Patch generation and application"
-    echo "  • Automated code quality fixes"
-    echo ""
-    echo "See docs/code_patcher/README.md for more information."
-    echo ""
-}
-
 run_refractor() {
     echo "Starting code_refractor module..."
     "$PROJECT_DIR/scripts/run_refractor.sh"
@@ -174,7 +160,7 @@ main() {
         print_header
         show_menu
         
-        read -p "Choose an option (1-6): " choice
+        read -p "Choose an option (1-5): " choice
         
         case $choice in
             1)
@@ -184,15 +170,12 @@ main() {
                 run_analyzer
                 ;;
             3)
-                run_patcher
-                ;;
-            4)
                 run_refractor
                 ;;
-            5)
+            4)
                 show_status
                 ;;
-            6)
+            5)
                 print_info "Exiting..."
                 exit 0
                 ;;

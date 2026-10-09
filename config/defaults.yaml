@@ -13,7 +13,6 @@ modules:
   enabled:
     - code_starter
     - code_analyzer
-    - code_patcher
   
   code_starter:
     description: "Interactive project creation and code generation"
@@ -21,10 +20,6 @@ modules:
   
   code_analyzer:
     description: "Code analysis and debugging utilities"
-    enabled: true
-  
-  code_patcher:
-    description: "Code patching and refactoring tools"
     enabled: true
 
 llm:

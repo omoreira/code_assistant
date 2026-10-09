@@ -9,11 +9,10 @@ code_assistant/
     src/
         code_starter/
         code_analyzer/
-        code_patcher/
         code_refractor/
         tools/
         shared/
-        db_master_handler/
+        data_handler/
         assistant_contracts/
 
 # PSEUDOCODE

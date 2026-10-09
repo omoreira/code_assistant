@@ -50,11 +50,6 @@ loggers:
     handlers: [console, file]
     propagate: false
   
-  code_patcher:
-    level: INFO
-    handlers: [console, file]
-    propagate: false
-  
   shared:
     level: DEBUG
     handlers: [console, file]

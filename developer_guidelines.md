@@ -64,7 +64,7 @@ src/
 ├── repo_documenter/
 ├── shared/
 ├── tools/                 # Reserved support package
-├── db_master_handler/     # Reserved support package
+├── data_handler/          # Reserved support package
 └── assistant_contracts/   # Reserved support package
 ```
 
@@ -196,7 +196,7 @@ Before accepting a change, review the diff for:
 - `code_converter` proposes pseudocode and does not itself apply edits.
 - `code_refractor` has verification and refactoring APIs, but should be treated
   as an evolving implementation and carefully reviewed.
-- `tools/`, `db_master_handler/`, and `assistant_contracts/` are reserved,
+- `tools/`, `data_handler/`, and `assistant_contracts/` are reserved,
   mostly empty support packages.
 - LLM-backed generation depends on a working local Ollama service unless a
   caller injects another compatible interface.
