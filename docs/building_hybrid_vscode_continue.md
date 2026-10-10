@@ -218,7 +218,8 @@ Practical consequences for these rules:
   rename) and `printf` / `cat >` for file writes, instead of `sed`, `awk`, `rm`,
   or `find -delete`.
 - **Encapsulate when needed.** For operations the policy blocks, call `scripts/agent_ops.sh` (a scoped helper doing literal/regex replace, delete, and move via `python3`) instead of issuing those commands directly - a script's internals are not subject to the agent's command policy.
-- **To remove the block entirely,** the installed extension bundle can be patched locally (a `.bak` backup is kept); reload VS Code afterwards.
+- **To replace the hard block with a prompt,** patch the installed bundle (backup kept): make `isCriticalCommand` return false, and set `run_terminal_command` to the command-level policy so safe commands stay silent while non-trivial ones ask. Reload VS Code afterwards.
+- **Approvals are per turn, not per command:** commands the agent proposes in one turn that need permission are presented together, so to approve once per task have the agent bundle a task's steps (or call a single script).
 - **Long calls:** there is no user-facing terminal-timeout setting in v2.0.0. Run
   slow local model calls in the background (`nohup ... &`) and poll the output.
 - A stricter-than-stock policy (for example an enterprise/admin policy) surfaces
