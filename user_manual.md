@@ -282,6 +282,16 @@ The project keeps separate tasks in separate `src/` packages:
 `tools/` and `assistant_contracts/` are reserved support packages and
 currently have no substantial implementation.
 
+## 10. Hybrid VS Code + Continue
+
+Beyond the Python toolkit, this repo provides a hybrid Continue (VS Code) setup:
+local Ollama wrappers for code analysis (R1) and deep reasoning (R2), driven by
+Continue rules (R0-R3). The wrappers live in `scripts/ollama/`
+(see `scripts/ollama/CONTRACT.md`), rule templates in `templates/continue_rules/`,
+and `scripts/setup_hybrid_continue.sh` installs the rules into `~/.continue/rules/`.
+
+Full guide: [Building a hybrid VS Code with Continue](docs/building_hybrid_vscode_continue.md).
+
 ## Troubleshooting
 
 - **Ollama connection or model errors:** ensure `ollama serve` is running, the

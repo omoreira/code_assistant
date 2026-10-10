@@ -53,6 +53,18 @@ or no implementation currently.
 The root-level `ui/` and `benchmark/` folders described above are defaults for
 generated repositories; the assistant itself keeps those tools under `src/`.
 
+## Hybrid VS Code + Continue
+
+This repo also ships a **hybrid** Continue (VS Code) setup: the agent plans and
+edits, while local Ollama wrappers under `scripts/ollama/` handle code analysis
+(R1) and deep reasoning (R2) behind a small, hardened contract (deterministic
+exit codes, a JSON envelope, and metadata-only logging). Rule templates live in
+`templates/continue_rules/`; `scripts/setup_hybrid_continue.sh` writes them into
+`~/.continue/rules/`.
+
+See [Building a hybrid VS Code with Continue](docs/building_hybrid_vscode_continue.md)
+and [`scripts/ollama/CONTRACT.md`](scripts/ollama/CONTRACT.md).
+
 ## Quick Start
 
 ### Requirements
@@ -171,6 +183,8 @@ For the full command reference, formats, and current limitations, see the
 code_assistant/
 ├── docs/                    # Unified project documentation
 ├── scripts/                 # Shell helpers and module launchers
+│   └── ollama/              # Hardened Ollama wrappers (hybrid Continue)
+├── templates/               # Continue hybrid rule templates
 ├── src/
 │   ├── code_starter/        # Project scaffolding and source generation
 │   ├── code_converter/      # Research notes to patch pseudocode
