@@ -285,8 +285,11 @@ def main(argv=None) -> int:
     parser.add_argument("--data-dir", default=DEFAULT_DATA_DIR)
     parser.add_argument("--use-llm", action="store_true")
     parser.add_argument("--interactive", action="store_true")
-    parser.add_argument("--model", default="deepseek-coder:6.7b")
-    parser.add_argument("--endpoint", default="http://localhost:11434")
+    from shared.llm_config import resolve_llm
+
+    _llm_defaults = resolve_llm("generation")
+    parser.add_argument("--model", default=_llm_defaults.model)
+    parser.add_argument("--endpoint", default=_llm_defaults.base_url)
     args = parser.parse_args(argv)
 
     llm = None

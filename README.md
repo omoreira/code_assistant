@@ -48,7 +48,10 @@ code as a draft and review it before use.
   configuration, logging, and utilities.
 
 `tools/` and `assistant_contracts/` are reserved support packages with little
-or no implementation currently.
+or no implementation currently. The top-level `data/` directory is likewise
+reserved: it is kept empty for a future epistemic-rigor subsystem (graph-based
+memory retrieval plus a DPO preference system) and is not read or written by any
+current code.
 
 The root-level `ui/` and `benchmark/` folders described above are defaults for
 generated repositories; the assistant itself keeps those tools under `src/`.
@@ -64,6 +67,42 @@ exit codes, a JSON envelope, and metadata-only logging). Rule templates live in
 
 See [Building a hybrid VS Code with Continue](docs/building_hybrid_vscode_continue.md)
 and [`scripts/ollama/CONTRACT.md`](scripts/ollama/CONTRACT.md).
+
+## Configure your LLM (local or API)
+
+The provider and model are resolved centrally by `shared.llm_config`, with a
+three-level precedence (lowest to highest):
+
+1. `config/defaults.yaml` — the committed defaults.
+2. Environment variables — copy [`config/.env.example`](config/.env.example) to
+   `.env` (git-ignored) or export them in your shell.
+3. CLI flags / explicit overrides (for example `--model`).
+
+Three roles are resolved: `analysis` (R1 code analysis, default `qwen3:14b`),
+`reasoning` (R2 deep reasoning, default `deepseek-r1:14b`), and `generation`
+(code generation, default `deepseek-coder:6.7b`).
+
+Use a different **local Ollama** model by setting `LLM_ANALYSIS_MODEL`,
+`LLM_REASONING_MODEL`, or `LLM_GENERATION_MODEL`, or by editing
+`config/defaults.yaml`.
+
+Use an **API provider** by setting a provider and its key, for example:
+
+```bash
+export LLM_PROVIDER=openai
+export LLM_MODEL=gpt-4o
+export OPENAI_API_KEY=sk-...   # read from the environment only; never stored
+```
+
+Supported providers: `ollama`, `openai`, `anthropic`, `huggingface`. Secrets are
+read from the environment **only** — never from `defaults.yaml`, never written to
+disk, never shown in logs. Mix providers per role with e.g.
+`LLM_REASONING_PROVIDER=openai` while leaving `LLM_GENERATION_PROVIDER=ollama`.
+
+The Continue wrappers under `scripts/ollama/` speak the **Ollama API only**; an
+API provider applies to the Python pipeline and to the Continue agent model,
+which `scripts/setup_hybrid_continue.sh --write-config` renders from the same
+resolved roles.
 
 ## Quick Start
 
@@ -185,6 +224,7 @@ code_assistant/
 ├── scripts/                 # Shell helpers and module launchers
 │   └── ollama/              # Hardened Ollama wrappers (hybrid Continue)
 ├── templates/               # Continue hybrid rule templates
+├── data/                    # Reserved (empty): future epistemic-rigor store
 ├── src/
 │   ├── code_starter/        # Project scaffolding and source generation
 │   ├── code_converter/      # Research notes to patch pseudocode

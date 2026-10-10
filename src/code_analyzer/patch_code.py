@@ -26,14 +26,20 @@ import re
 from datetime import datetime
 import requests
 
+from shared.llm_config import resolve_ollama
+
 # ============================================================================
 # Configuration
 # ============================================================================
-
-OLLAMA_BASE = "http://localhost:11434"
-OLLAMA_TIMEOUT = 600
-QWEN_MODEL = "qwen3:14b"
-DEEPSEEK_MODEL = "deepseek-r1:14b"
+# Model + endpoint are resolved from shared.llm_config
+# (defaults.yaml < environment < CLI). Values are unchanged when nothing
+# overrides them.
+_ANALYSIS = resolve_ollama("analysis")
+_REASONING = resolve_ollama("reasoning")
+OLLAMA_BASE = _ANALYSIS.base_url
+OLLAMA_TIMEOUT = _ANALYSIS.timeout
+QWEN_MODEL = _ANALYSIS.model
+DEEPSEEK_MODEL = _REASONING.model
 PATCH_BACKUP_DIR = Path.home() / ".continue" / "patch_backups"
 PATCH_BACKUP_DIR.mkdir(parents=True, exist_ok=True)
 

@@ -76,6 +76,10 @@ src/
 packages. Add code to them only when the responsibility and shared interface
 are clear; do not use them as miscellaneous catch-all folders.
 
+The top-level `data/` directory is reserved and kept empty for a later
+epistemic-rigor subsystem (graph-based memory retrieval + DPO). No current code
+reads or writes it.
+
 ## 3. Environment and package layout
 
 The project supports Python 3.8 and newer. Packages live in `src/`; setuptools
@@ -92,6 +96,19 @@ explicit include list. If it needs a user-facing command, add the entry point
 to both `setup.py` and `pyproject.toml` so the two installation paths agree.
 Keep runtime dependencies minimal and list them consistently in both package
 metadata files.
+
+### LLM configuration
+
+`shared.llm_config` is the single source of truth for provider/model selection
+(`config/defaults.yaml` < environment < explicit overrides) across the roles
+`default`, `analysis`, `reasoning`, and `generation`. `shared.providers` adapts a
+resolved selection to the `LLMInterface` API. Never read API keys from YAML and
+never write them to disk: they come from the environment only and are referenced
+by name (see `config/.env.example`). `shared.continue_config` renders a Continue
+`config.yaml` from the same resolved roles for
+`scripts/setup_hybrid_continue.sh --write-config`. New packages under `src/shared`
+are picked up automatically by the `shared*` glob in
+`[tool.setuptools.packages.find]`.
 
 ## 4. Module implementation conventions
 
@@ -209,5 +226,12 @@ Before accepting a change, review the diff for:
 - `tools/` and `assistant_contracts/` are reserved, mostly empty support
   packages. `data_handler` implements SQLite database creation from generated
   schemas.
+- `data/` is reserved and empty; it will host the future epistemic-rigor
+  subsystem (graph-based memory retrieval + DPO preference system). No current
+  code reads or writes it.
 - LLM-backed generation depends on a working local Ollama service unless a
   caller injects another compatible interface.
+- `code_starter.github_repo_planner` writes a generated project's
+  `config/settings.py` with a hardcoded model/endpoint (template text). This is
+  intentionally out of scope for the central resolver; wire it to
+  `shared.llm_config` if generated projects should inherit the caller's LLM choice.

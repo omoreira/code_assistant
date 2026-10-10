@@ -4,8 +4,14 @@ import requests
 import json
 from typing import Optional
 
-OLLAMA_BASE = "http://localhost:11434"
-OLLAMA_TIMEOUT = 600
+from shared.llm_config import resolve_ollama
+
+_ANALYSIS = resolve_ollama("analysis")
+_REASONING = resolve_ollama("reasoning")
+OLLAMA_BASE = _ANALYSIS.base_url
+OLLAMA_TIMEOUT = _ANALYSIS.timeout
+QWEN_MODEL = _ANALYSIS.model
+DEEPSEEK_MODEL = _REASONING.model
 
 def call_local_model(
     model: str,
@@ -46,7 +52,7 @@ Provide:
 2. Issues or edge cases
 3. Improvement suggestions"""
     
-    return call_local_model("qwen3:14b", prompt, temperature=0.3)
+    return call_local_model(QWEN_MODEL, prompt, temperature=0.3)
 
 def debug_code(code: str, issue: str) -> str:
     """Use DeepSeek-R1 for debugging with reasoning."""
@@ -57,7 +63,7 @@ Code:
 
 Trace the execution step-by-step to find the root cause and propose a fix."""
     
-    return call_local_model("deepseek-r1:14b", prompt, temperature=0.5)
+    return call_local_model(DEEPSEEK_MODEL, prompt, temperature=0.5)
 
 def generate_code(requirement: str, language: str = "python") -> str:
     """Use Claude via API (or fallback to Qwen locally)."""
@@ -66,4 +72,4 @@ def generate_code(requirement: str, language: str = "python") -> str:
 
 Include error handling and be production-ready."""
     
-    return call_local_model("qwen3:14b", prompt, temperature=0.7)
+    return call_local_model(QWEN_MODEL, prompt, temperature=0.7)

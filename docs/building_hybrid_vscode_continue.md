@@ -64,20 +64,32 @@ From this repo:
 # interactive: prompts for paths + models
 scripts/setup_hybrid_continue.sh
 
-# or non-interactive with your choices
+# non-interactive: model names default to the shared LLM resolver
+# (config/defaults.yaml < LLM_ANALYSIS_MODEL / LLM_REASONING_MODEL / LLM_* env)
+scripts/setup_hybrid_continue.sh --yes
+
+# override explicitly, and also render a Continue config.yaml (models)
 scripts/setup_hybrid_continue.sh --yes \
   --analyzer-model qwen3:14b \
   --reasoner-model deepseek-r1:14b \
-  --host http://localhost:11434
+  --host http://localhost:11434 \
+  --write-config
 ```
 
 The script:
 
+0. resolves the model names for the `analysis` and `reasoning` roles from the
+   shared LLM config (`config/defaults.yaml` overridden by the environment),
+   unless `--analyzer-model`/`--reasoner-model` or `--no-resolve` are given,
 1. fills the rule templates from `templates/continue_rules/` and writes them to
    `~/.continue/rules/` (backing up any files it overwrites to
    `~/.continue/rules/.backup-<timestamp>/`),
 2. creates the metadata data dir (`~/.local/state/ollama_wrappers/` by default),
-3. checks `curl`, `jq`, and whether Ollama is reachable.
+3. checks `curl`, `jq`, and whether Ollama is reachable,
+4. with `--write-config`, renders a Continue `config.yaml` (schema `v1`) from the
+   resolved roles to `~/.continue/config.yaml` (backing up any existing file).
+   API keys are written as `${{ secrets.<ENV> }}` references — never as values;
+   `--print-config` prints the same YAML instead of writing it.
 
 Then **reload VS Code** (or the Continue window) so the new rules load.
 
@@ -249,7 +261,26 @@ Design principles:
 
 Exit codes: `0` success · `2` usage · `3` environment · `4` upstream · `5` invalid response.
 
-## 14. See also
+## 14. Other editors (NeoVim and friends)
+
+The hybrid design is editor-agnostic: the specialists are plain shell scripts
+under `scripts/ollama/` with a stable contract (`CONTRACT.md`), and the R0–R3
+rules are just prompt text. Only Continue's `config.yaml`
+(`--write-config`) is VS Code-specific.
+
+In NeoVim (or Emacs, etc.) you can:
+
+- call the wrappers from a key mapping or job control, e.g.
+  `:!scripts/ollama/ask_local_analyzer.sh --json "..."`, and read the JSON
+  envelope from the quickfix list or a split;
+- reuse the same models by exporting the variables from `config/.env.example`
+  (the wrappers read `OLLAMA_HOST` and accept `--model`);
+- paste the R0–R3 text into your assistant plugin as system instructions.
+
+There is currently no packaged NeoVim plugin; the contract and the wrappers are
+the interface.
+
+## 15. See also
 
 - `scripts/ollama/CONTRACT.md` — the wrapper contract.
 - `user_manual.md`, `developer_guidelines.md` — the wider code_assistant toolkit.

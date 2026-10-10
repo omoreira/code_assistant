@@ -132,9 +132,12 @@ def main(argv=None) -> int:
     )
     parser.add_argument("input", help="Research note file (UTF-8 text or Markdown)")
     parser.add_argument("-o", "--output", default="patch.pseudo", help="Output file")
-    parser.add_argument("--model", default="deepseek-coder:6.7b", help="Ollama model")
+    from shared.llm_config import resolve_llm
+
+    _llm_defaults = resolve_llm("generation")
+    parser.add_argument("--model", default=_llm_defaults.model, help="Ollama model")
     parser.add_argument(
-        "--endpoint", default="http://localhost:11434", help="Ollama API endpoint"
+        "--endpoint", default=_llm_defaults.base_url, help="Ollama API endpoint"
     )
     docker_group = parser.add_mutually_exclusive_group()
     docker_group.add_argument(

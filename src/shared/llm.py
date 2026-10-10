@@ -1,67 +1,75 @@
 """LLM Interface module.
 
-Provides abstraction for local LLM (ollama) integration.
+A thin facade over the provider adapters in :mod:`shared.providers`. It keeps
+the historical Ollama defaults so existing callers are unaffected, while
+allowing any provider to be selected via ``provider=`` or ``resolved=``.
 """
 
-import requests
-import json
 from typing import Any, Dict, List, Optional
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
+
+from .llm_config import PROVIDER_OLLAMA, ResolvedLLM
+from .providers import LLMResponseError, LLMTransportError, provider_for
 
 
 class LLMInterface:
-    """Interface to local LLM via ollama API."""
-    
+    """Facade over a provider adapter.
+
+    Defaults preserve the historical Ollama behaviour. Pass ``resolved=`` (a
+    :class:`shared.llm_config.ResolvedLLM`) to use any configured provider, or
+    ``provider=`` with an explicit ``api_endpoint``.
+    """
+
     def __init__(
         self,
         model: str = "deepseek-r1:14b",
         api_endpoint: str = "http://localhost:11434",
         timeout: int = 600,
         temperature: float = 0.7,
-        max_tokens: int = 2048
+        max_tokens: int = 2048,
+        provider: Optional[str] = None,
+        resolved: Optional[ResolvedLLM] = None,
     ):
-        """Initialize LLM interface.
-        
+        """Initialize the LLM interface.
+
         Args:
-            model: Model name (default: deepseek-r1:14b)
-            api_endpoint: API endpoint URL (default: localhost ollama)
-            timeout: Request timeout in seconds
-            temperature: Model temperature (0.0-1.0)
-            max_tokens: Maximum tokens in response
+            model: Model name (default: deepseek-r1:14b) when ``resolved`` is
+                not supplied.
+            api_endpoint: Base URL (default: localhost Ollama).
+            timeout: Request timeout in seconds.
+            temperature: Default model temperature (0.0-1.0).
+            max_tokens: Default maximum tokens in response.
+            provider: Provider kind (ollama/openai/anthropic/huggingface);
+                defaults to ``ollama``.
+            resolved: A fully-resolved selection to use verbatim (highest
+                priority; ignores the other arguments).
         """
-        self.model = model
-        self.api_endpoint = api_endpoint.rstrip("/")
-        self.timeout = timeout
-        self.temperature = temperature
-        self.max_tokens = max_tokens
-        
-        # Setup session with retries
-        self.session = requests.Session()
-        retry_strategy = Retry(
-            total=3,
-            backoff_factor=1,
-            status_forcelist=[429, 500, 502, 503, 504]
-        )
-        adapter = HTTPAdapter(max_retries=retry_strategy)
-        self.session.mount("http://", adapter)
-        self.session.mount("https://", adapter)
-    
-    def is_available(self) -> bool:
-        """Check if LLM API is available.
-        
-        Returns:
-            True if API is reachable, False otherwise
-        """
-        try:
-            response = self.session.get(
-                f"{self.api_endpoint}/api/tags",
-                timeout=5
+        if resolved is None:
+            kind = (provider or PROVIDER_OLLAMA).strip().lower()
+            resolved = ResolvedLLM(
+                role="default",
+                provider=kind,
+                kind=kind,
+                model=model,
+                base_url=api_endpoint.rstrip("/"),
+                timeout=timeout,
+                temperature=temperature,
+                max_tokens=max_tokens,
             )
-            return response.status_code == 200
-        except requests.RequestException:
-            return False
     
+        self._resolved = resolved
+        self._provider = provider_for(resolved)
+
+        # Preserve the historical public attributes.
+        self.model = resolved.model
+        self.api_endpoint = resolved.base_url
+        self.timeout = resolved.timeout
+        self.temperature = resolved.temperature
+        self.max_tokens = resolved.max_tokens
+
+    def is_available(self) -> bool:
+        """Return True if the underlying provider looks reachable."""
+        return self._provider.is_available()
+
     def call(
         self,
         prompt: str,
@@ -69,56 +77,32 @@ class LLMInterface:
         max_tokens: Optional[int] = None,
         **kwargs: Any
     ) -> str:
-        """Call LLM with prompt.
-        
+        """Call the configured LLM with ``prompt``.
+
         Args:
-            prompt: Prompt text
-            temperature: Override default temperature
-            max_tokens: Override default max_tokens
-            **kwargs: Additional parameters
-        
+            prompt: Prompt text.
+            temperature: Override the default temperature.
+            max_tokens: Override the default max tokens.
+            **kwargs: Extra provider parameters.
+
         Returns:
-            LLM response text
-        
+            The model response text.
+
         Raises:
-            ConnectionError: If API unreachable
-            ValueError: If response is invalid
+            ConnectionError: If the provider is unreachable or times out.
+            ValueError: If the provider returns an invalid response.
         """
-        url = f"{self.api_endpoint}/api/generate"
-        
-        # Use provided values or defaults
-        temp = temperature if temperature is not None else self.temperature
-        tokens = max_tokens if max_tokens is not None else self.max_tokens
-        
-        payload = {
-            "model": self.model,
-            "prompt": prompt,
-            "temperature": temp,
-            "num_predict": tokens,
-            "stream": False,
-            **kwargs
-        }
-        
         try:
-            response = self.session.post(
-                url,
-                json=payload,
-                timeout=self.timeout
+            return self._provider.generate(
+                prompt,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                **kwargs,
             )
-            response.raise_for_status()
-            
-            data = response.json()
-            if "response" not in data:
-                raise ValueError("Invalid API response: missing 'response' field")
-            
-            return data["response"].strip()
-            
-        except requests.Timeout:
-            raise ConnectionError("LLM API request timed out")
-        except requests.RequestException as e:
-            raise ConnectionError(f"LLM API error: {e}")
-        except json.JSONDecodeError as e:
-            raise ValueError(f"Invalid JSON response from LLM API: {e}")
+        except LLMTransportError as e:
+            raise ConnectionError(f"LLM API error: {e}") from e
+        except LLMResponseError as e:
+            raise ValueError(f"Invalid API response: {e}") from e
     
     def generate_code(
         self,

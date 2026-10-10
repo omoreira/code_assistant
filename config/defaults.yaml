@@ -33,6 +33,27 @@ llm:
   timeout: 600
   temperature: 0.7
   max_tokens: 2048
+  # Provider registry. Add or edit entries to point a fork at any local Ollama
+  # server or any API vendor. `api_key_env` names the LOCAL environment variable
+  # that holds the credential -- secrets are never stored in this file.
+  providers:
+    ollama:
+      base_url: "http://localhost:11434"
+      api_key_env: ""
+    openai:
+      base_url: "https://api.openai.com/v1"
+      api_key_env: "OPENAI_API_KEY"
+    anthropic:
+      base_url: "https://api.anthropic.com"
+      api_key_env: "ANTHROPIC_API_KEY"
+    huggingface:
+      base_url: "https://api-inference.huggingface.co"
+      api_key_env: "HUGGINGFACE_API_KEY"
+  # Optional: pin a specific role to a specific provider (model still comes
+  # from `models` above). Uncomment and edit to mix local + API per role.
+  # roles:
+  #   analysis:  { provider: "ollama" }
+  #   reasoning: { provider: "openai" }
 
 paths:
   output_dir: "./generated_projects"

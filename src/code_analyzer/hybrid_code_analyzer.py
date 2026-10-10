@@ -22,14 +22,17 @@ import requests
 from dataclasses import dataclass, asdict
 import traceback
 
+from shared.llm_config import resolve_ollama
+
 
 # Configuration
-
-
-OLLAMA_BASE = "http://localhost:11434"
-OLLAMA_TIMEOUT = 600
-QWEN_MODEL = "qwen3:14b"
-DEEPSEEK_MODEL = "deepseek-r1:14b"
+# Model + endpoint resolved from shared.llm_config (defaults.yaml < env < CLI).
+_ANALYSIS = resolve_ollama("analysis")
+_REASONING = resolve_ollama("reasoning")
+OLLAMA_BASE = _ANALYSIS.base_url
+OLLAMA_TIMEOUT = _ANALYSIS.timeout
+QWEN_MODEL = _ANALYSIS.model
+DEEPSEEK_MODEL = _REASONING.model
 
 @dataclass
 class AnalysisResult:

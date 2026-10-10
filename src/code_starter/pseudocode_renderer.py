@@ -39,6 +39,20 @@ try:  # Support both package and direct-script execution.
 except ImportError:  # pragma: no cover - used by `python code_starter/pseudocode_renderer.py`
     from blueprint_renderer import create_blueprint, parse_repomap
 
+try:
+    from shared.llm_config import resolve_llm
+except ImportError:  # pragma: no cover - direct execution without PYTHONPATH=src
+
+    def resolve_llm(role: str = "generation", **kwargs):  # type: ignore
+        """Minimal fallback mirroring shared.llm_config built-in defaults."""
+        from types import SimpleNamespace
+
+        return SimpleNamespace(
+            model="deepseek-coder:6.7b",
+            base_url="http://localhost:11434",
+            timeout=600,
+        )
+
 
 # Bodies that mean "no items in this section".
 _NONE_TOKENS = {"", "NONE", "EMPTY"}
@@ -630,7 +644,7 @@ class PseudocodeRenderer:
     
     def call_llm_for_conversion(self, pseudocode: str, filepath: str) -> Optional[str]:
         """
-        Call local LLM (deepseek-coder:6.7b) to convert pseudocode to real code.
+        Call the configured local LLM to convert pseudocode to real code.
         
         Args:
             pseudocode: The pseudocode to convert
@@ -644,10 +658,10 @@ class PseudocodeRenderer:
             # Build prompt for LLM
             prompt = self._build_conversion_prompt(pseudocode, filepath)
             
-            # Call local LLM via ollama or similar
-            # Note: This is a placeholder - adjust based on your LLM setup
+            # Call local LLM via ollama (model resolved from shared.llm_config)
+            model = resolve_llm("generation").model
             result = subprocess.run(
-                ['ollama', 'run', 'deepseek-coder:6.7b'],
+                ['ollama', 'run', model],
                 input=prompt,
                 capture_output=True,
                 text=True,
@@ -663,7 +677,7 @@ class PseudocodeRenderer:
         except FileNotFoundError:
             # Ollama not installed/not in PATH
             print("    ⚠ Warning: ollama not available, skipping LLM conversion")
-            print("    Please ensure 'deepseek-coder:6.7b' is available via ollama")
+            print("    Please ensure the configured model is available via ollama")
             return None
         except Exception as e:
             self.errors.append(f"Exception calling LLM: {e}")

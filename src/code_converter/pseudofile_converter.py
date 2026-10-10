@@ -121,9 +121,12 @@ def main(argv=None) -> int:
     parser.add_argument(
         "-o", "--output", help="Output path (default: overwrite the input file)"
     )
-    parser.add_argument("--model", default="qwen3:14b", help="Ollama model to use")
+    from shared.llm_config import resolve_llm
+
+    _llm_defaults = resolve_llm("analysis")  # preserves the previous qwen3:14b default
+    parser.add_argument("--model", default=_llm_defaults.model, help="Ollama model to use")
     parser.add_argument(
-        "--endpoint", default="http://localhost:11434", help="Ollama API endpoint"
+        "--endpoint", default=_llm_defaults.base_url, help="Ollama API endpoint"
     )
     args = parser.parse_args(argv)
     from shared.llm import LLMInterface

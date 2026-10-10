@@ -30,6 +30,26 @@ Commands that use Ollama generally accept `--model` and `--endpoint` options.
 Several Python APIs also accept an LLM interface object, allowing another
 compatible provider to be supplied by the caller.
 
+### Configuring the LLM (local or API)
+
+The provider and model for each role are resolved by `shared.llm_config` from
+`config/defaults.yaml`, overridden by environment variables, then by CLI flags.
+Copy `config/.env.example` to `.env` and set the variables you need (the example
+lists variable *names* only and holds no secrets):
+
+| Variable | Role | Default |
+|---|---|---|
+| `LLM_MODEL` | global default model | `deepseek-coder:6.7b` |
+| `LLM_ANALYSIS_MODEL` | R1 code analysis | `qwen3:14b` |
+| `LLM_REASONING_MODEL` | R2 deep reasoning | `deepseek-r1:14b` |
+| `LLM_GENERATION_MODEL` | generation | `deepseek-coder:6.7b` |
+| `LLM_PROVIDER`, `LLM_ANALYSIS_PROVIDER`, ... | provider | `ollama` |
+| `LLM_API_ENDPOINT` | base URL | `http://localhost:11434` |
+| `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `HUGGINGFACE_API_KEY` | API credentials | (none) |
+
+Supported providers: `ollama`, `openai`, `anthropic`, `huggingface`. API keys are
+read from the environment only and are never stored in the repository.
+
 ## 2. Create a repository from a starterfile
 
 Run the interactive creator from the repository root:

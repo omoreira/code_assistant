@@ -83,13 +83,13 @@ Generate the code and provide a brief explanation of key design decisions."""
             result.info["quality_score"] = 0.95
         else:
             # Fallback to local
-            result.info["model_used"] = "qwen3:14b (fallback)"
+            result.info["model_used"] = f"{QWEN_MODEL} (fallback)"
             response = _generate_with_qwen(user_prompt, system_prompt, language)
             result.info["generated_code"] = response
             result.info["quality_score"] = 0.75
     else:
         # Route to Qwen for fast boilerplate/simple functions
-        result.info["model_used"] = "qwen3:14b"
+        result.info["model_used"] = f"{QWEN_MODEL}"
         response = _generate_with_qwen(user_prompt, system_prompt, language)
         result.info["generated_code"] = response
         result.info["quality_score"] = 0.75
