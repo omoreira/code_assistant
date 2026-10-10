@@ -10,7 +10,7 @@ documentation.
 - **Objective:** This app aims to provide a local, low-resource coding assistant. Users should create a starter file with a repomap and pseudocode for each script file.
 - **Assistive Tools and LLMs:** This code was developed from author's pseudocode. VS Code Continue (LLM: Claude 3 Haiku) was used to auto-convert developer's pseudocode into Python-based modules in a similar process that this app will offer. For further information, see AI Assistance Disclosure below.
 - **Status:** Manual-auditing of the generated base code (i.e., the human behind the machine is manually auditing each piece of code and documentation generated). Assistant testing phase. This base code is still in the initial phase of development; use with caution!
-- **Last Updated by the Human behind the Machine:** 2026-10-01
+- **Last Updated by the Human behind the Machine:** 2026-10-10
 
 ## Overview
 
