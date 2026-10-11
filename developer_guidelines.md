@@ -178,6 +178,10 @@ overwrite files designated as new scripts.
   tailored Python program.
 - `RepoDocumenter` scans Python packages below `src/` and writes to `docs/`.
   Existing pages are preserved unless update mode is selected.
+- The assistant's own web UI lives in the top-level `ui/` folder and is launched
+  by `scripts/codeassistant_ui.sh` (venv + `streamlit run ui/app.py`, port
+  8503). It is presentation-only: it imports the `src/` packages and holds no
+  business logic of its own, so reusable behavior stays under `src/`.
 
 ### Structural refactoring
 

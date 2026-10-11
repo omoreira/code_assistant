@@ -345,6 +345,43 @@ and `scripts/setup_hybrid_continue.sh` installs the rules into `~/.continue/rule
 
 Full guide: [Building a hybrid VS Code with Continue](docs/building_hybrid_vscode_continue.md).
 
+## 11. Launch the assistant web UI
+
+The assistant includes a Streamlit interface that wraps the Starter, Editor,
+Converter, and Patcher workflows in a browser UI. Launch it from the repository
+root:
+
+```bash
+bash scripts/codeassistant_ui.sh
+```
+
+The launcher creates/activates the project `venv`, installs dependencies, and
+runs `streamlit run ui/app.py` on **port 8503** — chosen so it does not collide
+with the default 8501. Change the port either on the command line or by
+forwarding options to `streamlit run`:
+
+```bash
+bash scripts/codeassistant_ui.sh --port 8504
+bash scripts/codeassistant_ui.sh -- --server.headless true
+```
+
+Pages:
+
+- **Starter** — build a `starterfile.pseudo` one section at a time
+  (`# PATHS`/`# REPOMAP`, `# DATABASES`, `# PSEUDOCODE`). Each section has a
+  **Verify** button; once it passes, a **Save** button merges it into the file.
+  The **Review & Run** tab runs the `code_starter` pipeline as a background
+  process and shows a per-stage report.
+- **Editor** — create/edit a pseudocode file and convert it to real code.
+- **Converter** — `pseudo2code` and `longtext2pseudo` tasks.
+- **Patcher** — a context-aware chat that reads project files and proposes
+  `patch.pseudo` changes, validated with a dry run before you apply them.
+
+All LLM-backed features require a reachable local Ollama server; the app
+hard-blocks with a message when it is unavailable. Application logic stays in
+the packages under `src/`; the UI is presentation-only. See
+[`ui/README.md`](ui/README.md).
+
 ## Troubleshooting
 
 - **Ollama connection or model errors:** ensure `ollama serve` is running, the
@@ -367,3 +404,7 @@ Full guide: [Building a hybrid VS Code with Continue](docs/building_hybrid_vscod
 - **Generation blocked by preflight:** set `# STATUS: APPROVED`, then review
   and resolve the errors in `docs/pseudocode_report.md`; the tagged copy under
   `tmp/` marks the offending lines.
+- **Web UI does not start or reports Ollama unavailable:** start `ollama serve`
+  (the UI hard-blocks without it) and confirm the launcher's `venv` has
+  `streamlit` installed (the launcher installs it on first run). If port 8503 is
+  taken, pass `--port PORT`.

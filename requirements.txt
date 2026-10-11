@@ -1,3 +1,6 @@
 # Core dependencies for code-assistant
 pyyaml>=6.0
 requests>=2.28.0
+
+# Streamlit UI (see ui/)
+streamlit>=1.36

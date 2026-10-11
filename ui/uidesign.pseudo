@@ -1,0 +1,28 @@
+# UI design specification
+
+FRAMEWORK: Streamlit
+
+PAGES:
+- Starter: build a starterfile.pseudo section by section, then run the pipeline.
+- Editor: create or edit pseudocode files and convert them to code.
+- Converter: convert pseudocode to code (pseudo2code) and long notes to pseudocode (longtext2pseudo).
+- Patcher: a context-aware chat that reads project files and proposes patches.
+
+WORKFLOWS:
+Starter has four tabs. Tab 1 edits # PATHS and # REPOMAP, tab 2 edits
+# DATABASES, tab 3 edits # PSEUDOCODE, tab 4 reviews the assembled file and
+runs the code_starter pipeline. Each of tabs 1-3 has a Verify button; on
+success a Save button appears and the section is written into the starterfile.
+Tab 4 runs the pipeline in the background and shows a per-stage report.
+
+INPUTS AND OUTPUTS:
+Project root and starterfile name are inputs. Editors are multi-line text
+areas. Verification failures are shown as errors; successes as messages. The
+pipeline report shows each stage pass/fail plus the smoke-test artifact.
+
+VISUAL DESIGN:
+A left sidebar lists the four pages. Wide layout, one primary column, tabs for
+sub-sections, status messages inline.
+
+ACCESSIBILITY:
+Labels on every input, keyboard-navigable tabs, sufficient contrast.

@@ -63,6 +63,8 @@ or no implementation currently.
 
 The root-level `ui/` and `benchmark/` folders described above are defaults for
 generated repositories; the assistant itself keeps those tools under `src/`.
+The assistant's own Streamlit interface also lives in the top-level [`ui/`](ui/)
+folder and is launched with `scripts/codeassistant_ui.sh`.
 
 ## Hybrid VS Code + Continue
 
@@ -230,6 +232,22 @@ For the full command reference, formats, and current limitations, see the
 [user manual](user_manual.md). For architecture and contribution guidance, see
 [developer guidelines](developer_guidelines.md).
 
+### Launch the assistant web UI
+
+The assistant ships a Streamlit UI for the Starter, Editor, Converter, and
+Patcher workflows. Start it from the repository root:
+
+```bash
+bash scripts/codeassistant_ui.sh
+```
+
+The launcher creates/activates the project virtual environment, installs
+dependencies, and runs `streamlit run ui/app.py` on **port 8503** (chosen so it
+does not collide with an app already using the default 8501). Override the port
+with `--port PORT`, or forward options to `streamlit run` after `--`. The UI
+hard-blocks with a message unless a local Ollama server is reachable. See
+[`ui/README.md`](ui/README.md) for the page-by-page breakdown.
+
 ## Repository Layout
 
 ```text
@@ -238,6 +256,7 @@ code_assistant/
 ├── scripts/                 # Shell helpers and module launchers
 │   └── ollama/              # Hardened Ollama wrappers (hybrid Continue)
 ├── templates/               # Continue hybrid rule templates
+├── ui/                      # Assistant Streamlit web UI (codeassistant_ui.sh)
 ├── src/
 │   ├── code_starter/        # Project scaffolding and source generation
 │   ├── code_converter/      # Research notes to patch pseudocode
@@ -292,3 +311,5 @@ Main reason being to accelerate development and reduce repetitive tasks, allowin
 In summary, all architectural decisions, design logic, modular framework, and core vision were conceived and guided by the human creator (Olga Moreira). This project reflects years of research into low-resource coding assistance, modular and decentralized design principles.
 
 **This disclosure is offered in the interest of transparency and to acknowledge that while AI can support structured thinking and development, it does not replace human intent, authorship, or ethical responsibility.**
+
+

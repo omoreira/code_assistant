@@ -18,6 +18,9 @@ and this project aims to follow [Semantic Versioning](https://semver.org/).
   declared and never overwrites an existing file.
 - `shared.paths_config.data_dir_source` / `data_dir_is_explicit` to report
   which precedence level supplied the data directory.
+- Streamlit web UI under `ui/` (Starter, Editor, Converter, and Patcher pages)
+  with a `scripts/codeassistant_ui.sh` launcher that sets up the venv and runs
+  `streamlit run ui/app.py` on port 8503.
 
 ### Changed
 - The SQLite data directory is no longer created as an implicit side effect.

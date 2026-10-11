@@ -149,3 +149,6 @@ FINAL_COMPLETION_REPORT.txt
 SCRIPTS_VERIFICATION.txt
 docs/session-notes-2026-10-10.md
 docs/session-notes-llm-config-centralization.md
+
+# Streamlit UI workspace (generated starterfiles)
+ui/workspace/
