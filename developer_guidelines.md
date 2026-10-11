@@ -35,9 +35,10 @@ do not copy this assistant’s own module names into every generated `src/`.
 Operations on another repository should accept an explicit `project_root` or
 `project_root`-like constructor argument. Resolve it once, anchor output paths
 to it, and reject absolute or traversal paths when entries are expected to be
-relative. The starterfile’s `# PROJECT_ROOT: .` means its own directory is the
-root for new-format starterfiles. Legacy starterfiles retain their prior
-working-directory behavior.
+relative. The starterfile’s `# PATHS` section (`root: .`) means its own
+directory is the root for new-format starterfiles; the legacy
+`# PROJECT_ROOT: .` marker is still accepted, and legacy starterfiles retain
+their prior working-directory behavior when neither is present.
 
 ### Treat pseudo files according to their purpose
 

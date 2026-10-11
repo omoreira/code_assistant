@@ -30,6 +30,15 @@ class Sqlite3UnavailableError(RuntimeError):
     """Raised when the ``sqlite3`` executable cannot be found."""
 
 
+class DataDirectoryMissingError(RuntimeError):
+    """Raised when the data directory is absent and auto-creation is disabled.
+
+    code_starter no longer creates the data directory as a side effect: it must
+    be requested explicitly, e.g. via a ``# PATHS`` entry (``data_dir: data``) or
+    a ``--data-dir`` flag / ``CODE_ASSISTANT_DATA_DIR`` environment variable.
+    """
+
+
 def sqlite3_path() -> Optional[str]:
     """Return the path to the ``sqlite3`` executable, or ``None`` if missing."""
     return shutil.which("sqlite3")
@@ -79,6 +88,7 @@ class DatabaseCreator:
         data_dir: Optional[str] = None,
         interactive: bool = False,
         runner: Optional[Runner] = None,
+        create_dir: bool = True,
     ) -> None:
         self.project_root = Path(project_root).expanduser().resolve()
         if not self.project_root.is_dir():
@@ -92,6 +102,9 @@ class DatabaseCreator:
         self.default_data_dir = data_dir or resolve_data_dir()
         self.interactive = interactive
         self._runner = runner or _default_runner
+        # When False, the data directory is never created implicitly; a clear
+        # error is raised instead if it is missing.
+        self.create_dir = create_dir
 
     # -- path handling ---------------------------------------------------
     def _absolute_data_dir(self, data_dir: Optional[str] = None) -> Path:
@@ -132,7 +145,16 @@ class DatabaseCreator:
             )
 
         created: List[Path] = []
-        target_dir.mkdir(parents=True, exist_ok=True)
+        if self.create_dir:
+            target_dir.mkdir(parents=True, exist_ok=True)
+        elif not target_dir.is_dir():
+            raise DataDirectoryMissingError(
+                "Data directory does not exist: {}. Declare it in the "
+                "starterfile's # PATHS section (e.g. 'data_dir: {}') or pass "
+                "--data-dir, otherwise it is not created automatically.".format(
+                    target_dir, target_dir.name
+                )
+            )
         for schema in schemas:
             target = target_dir / database_name(schema)
             if target.exists():
@@ -147,8 +169,13 @@ def create_databases(
     data_dir: Optional[str] = None,
     interactive: bool = False,
     runner: Optional[Runner] = None,
+    create_dir: bool = True,
 ) -> List[Path]:
     """Convenience wrapper around :class:`DatabaseCreator`."""
     return DatabaseCreator(
-        project_root, data_dir=data_dir, interactive=interactive, runner=runner
+        project_root,
+        data_dir=data_dir,
+        interactive=interactive,
+        runner=runner,
+        create_dir=create_dir,
     ).create_all()

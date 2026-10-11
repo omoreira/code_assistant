@@ -32,6 +32,7 @@ from typing import List, Optional
 
 from code_analyzer.pseudocode_analyzer import PseudocodeAnalyzer
 from code_starter.pseudocode_renderer import PseudocodeRenderer, archive_starterfile
+from code_starter.starterfile_paths import parse_paths
 from shared.constants import DEFAULT_DATA_DIR
 from shared.paths_config import resolve_data_dir
 
@@ -73,9 +74,13 @@ class Pipeline:
         self.starterfile = (
             candidate if candidate.is_absolute() else self.project_root / candidate
         )
+        # The starterfile may declare a # PATHS section (root + data_dir).
+        self.paths = parse_paths(self.starterfile) or {}
         # Resolve the data-storage folder when the caller passes none:
-        # config/defaults.yaml -> CODE_ASSISTANT_DATA_DIR/DATA_DIR -> built-in.
-        self.data_dir = data_dir or resolve_data_dir()
+        # CLI override -> CODE_ASSISTANT_DATA_DIR/DATA_DIR -> # PATHS -> config.
+        self.data_dir = resolve_data_dir(
+            override=data_dir, project_value=self.paths.get("data_dir")
+        )
         self.use_llm = use_llm
         self._llm = llm_interface
         self.interactive = interactive

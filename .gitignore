@@ -142,11 +142,6 @@ temp_*
 *.tmp
 
 # Testing artifacts; keep the code_starter smoke test versioned.
-tests/*
-!tests/test_code_starter_smoke.py
-!tests/test_pipeline.py
-!tests/test_data_handler.py
-!tests/test_pseudocode_analyzer.py
 .pytest_cache/
 .coverage
 htmlcov/

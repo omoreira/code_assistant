@@ -6,7 +6,12 @@ from pathlib import Path
 
 import pytest
 
-from data_handler import DatabaseCreator, create_databases, sqlite3_path
+from data_handler import (
+    DatabaseCreator,
+    DataDirectoryMissingError,
+    create_databases,
+    sqlite3_path,
+)
 
 SCHEMA_DIR = Path("src") / "data_handler" / "sqlite_schema"
 
@@ -40,6 +45,29 @@ def test_create_all_overwrites_via_injected_runner(tmp_path, monkeypatch):
         "CREATE TABLE"
     )
     assert calls and calls[0][0][1].endswith("users.db")
+
+
+def test_create_all_without_create_dir_requires_existing(tmp_path):
+    _write_schema(tmp_path, "users.db.sql", "CREATE TABLE t (identifier TEXT);")
+
+    with pytest.raises(DataDirectoryMissingError):
+        create_databases(
+            str(tmp_path), data_dir="data", create_dir=False, runner=lambda *_: None
+        )
+
+    # The directory is never created implicitly.
+    assert not (tmp_path / "data").exists()
+
+
+def test_create_all_with_create_dir_makes_directory(tmp_path):
+    _write_schema(tmp_path, "users.db.sql", "CREATE TABLE t (identifier TEXT);")
+
+    created = create_databases(
+        str(tmp_path), data_dir="data", create_dir=True, runner=lambda *_: None
+    )
+
+    assert created == [(tmp_path / "data" / "users.db").resolve()]
+    assert (tmp_path / "data").is_dir()
 
 
 def test_prompt_is_skipped_when_not_interactive(tmp_path, monkeypatch):

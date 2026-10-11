@@ -55,12 +55,28 @@ except ImportError:  # pragma: no cover - direct execution without PYTHONPATH=sr
 
 
 try:
-    from shared.paths_config import resolve_data_dir
+    from shared.paths_config import (
+        data_dir_is_explicit,
+        data_dir_source,
+        resolve_data_dir,
+    )
 except ImportError:  # pragma: no cover - direct execution without PYTHONPATH=src
 
     def resolve_data_dir(override: Optional[str] = None, **kwargs) -> str:  # type: ignore
         """Minimal fallback mirroring shared.constants.DEFAULT_DATA_DIR."""
         return override or "data"
+
+    def data_dir_source(override: Optional[str] = None, **kwargs) -> str:  # type: ignore
+        return "override" if override else "builtin"
+
+    def data_dir_is_explicit(source: str) -> bool:  # type: ignore
+        return source in ("override", "env", "starterfile")
+
+
+try:
+    from .starterfile_paths import parse_paths
+except ImportError:  # pragma: no cover - direct script execution
+    from starterfile_paths import parse_paths
 
 
 # Bodies that mean "no items in this section".
@@ -119,9 +135,14 @@ class PseudocodeRenderer:
         self.starterfile = str(Path(starterfile).expanduser())
         self.project_root = Path(project_root).expanduser().resolve() if project_root else None
         self._project_root_explicit = project_root is not None
-        # Resolve the data-storage folder when none is given (config -> env ->
-        # built-in), so a user-set default flows through to database creation.
-        self.data_dir = data_dir or resolve_data_dir()
+        # Parse the optional # PATHS section for the project-level data dir.
+        self.paths = parse_paths(self.starterfile) or {}
+        self._explicit_data_dir = data_dir
+        # Resolve the data-storage folder (CLI override -> env -> # PATHS ->
+        # config -> built-in) so a user-set default flows through.
+        self.data_dir = resolve_data_dir(
+            override=data_dir, project_value=self.paths.get("data_dir")
+        )
         self.interactive = interactive
         self.archive = archive
         self.mode = None
@@ -150,17 +171,16 @@ class PseudocodeRenderer:
             return 'mode_b'
 
     def _root_from_starterfile(self) -> Path:
-        """Resolve PROJECT_ROOT metadata, retaining CWD semantics for legacy files."""
+        """Resolve root metadata from ``# PATHS`` (or legacy ``# PROJECT_ROOT:``).
+
+        Retains current-working-directory semantics for legacy files that
+        declare no root.
+        """
         starter_path = Path(self.starterfile).resolve()
-        try:
-            content = starter_path.read_text(encoding='utf-8')
-        except OSError:
+        root_value = (self.paths or {}).get("root")
+        if not root_value:
             return Path.cwd().resolve()
-        marker = re.search(r'^# PROJECT_ROOT:\s*(.*?)\s*$', content, re.MULTILINE)
-        if not marker:
-            return Path.cwd().resolve()
-        root = (starter_path.parent / marker.group(1)).resolve()
-        return root
+        return (starter_path.parent / root_value).resolve()
     
     # ==================== MODE A: Fresh Project ====================
     
@@ -447,9 +467,19 @@ class PseudocodeRenderer:
             print("  ⚠ data_handler unavailable; databases not created")
             return True
 
+        # The data directory is created only when its location was requested
+        # explicitly (--data-dir / env var / # PATHS / interactive prompt); the
+        # implicit default is never created as a side effect.
+        source = data_dir_source(
+            override=self._explicit_data_dir, project_value=self.paths.get("data_dir")
+        )
+        create_dir = data_dir_is_explicit(source) or self.interactive
         try:
             created = _create_databases(
-                str(project_root), data_dir=self.data_dir, interactive=self.interactive
+                str(project_root),
+                data_dir=self.data_dir,
+                interactive=self.interactive,
+                create_dir=create_dir,
             )
         except Exception as exc:
             self.errors.append("Database creation failed: {}".format(exc))

@@ -1,3 +1,7 @@
+# PATHS
+root: .
+data_dir: data
+
 # REPOMAP
 
 code_assistant/

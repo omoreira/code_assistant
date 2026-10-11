@@ -69,17 +69,26 @@ In the menu:
 
 The standard layout includes `docs/`, `scripts/`, `config/`, `ui/`,
 `benchmark/`, `src/`, and shared support package folders. The starterfile uses
-`# PROJECT_ROOT: .` and relative paths, so it can be rendered from any working
-directory.
+a `# PATHS` section with `root: .` and relative paths, so it can be rendered
+from any working directory.
 
 New starterfiles have these sections:
 
+- `# PATHS` declares generation-time locations: `root` (relative to the
+  starterfile, like the legacy `# PROJECT_ROOT: .` marker) and `data_dir` (the
+  SQLite storage folder). The data directory is created only when it is
+  declared here (or requested via `--data-dir`, the
+  `CODE_ASSISTANT_DATA_DIR`/`DATA_DIR` environment variable, or
+  `--interactive`).
 - `# REPOMAP` describes the directory tree to seed. `NONE` infers the structure
   from the `# PSEUDOCODE` headers.
 - `# DATABASES` describes SQLite databases and tables. `NONE` means the
   repository has no databases.
 - `# PSEUDOCODE` describes source files to generate as code. `NONE` means the
-  source code was already generated and generation is skipped.
+  source code was already generated and generation is skipped. Each `## <path>`
+  block may carry `INPUT`, `OUTPUT`, `TASK`, `CONDITIONS`, `PREFERENCES`, and
+  `ENV_VARS` fields; `ENV_VARS` lists the environment variables (names and
+  defaults only -- never secrets) that the generated code expects to read.
 - `# SPECIFICATIONS` describes editable pseudo files to place into the target
   repository, currently `benchmark/benchmark.pseudo` and `ui/uidesign.pseudo`.
 - `# STATUS: APPROVED` must be present before the pipeline generates code.
@@ -98,17 +107,23 @@ The pipeline runs four stages:
    `docs/pseudocode_report.md` and a tagged copy of the starterfile under
    `tmp/`. Blocking errors stop before any code is written.
 2. **code_starter**: seeds REPOMAP directories, creates specification files,
-   builds the SQLite schema files and `.db` files under the data directory, and
-   converts `# PSEUDOCODE` entries with Ollama.
+   builds the SQLite schema files, creates `.db` files under the data directory,
+   and converts `# PSEUDOCODE` entries with Ollama. The data directory itself is
+   created only when its location was requested explicitly (see the `# PATHS`
+   note above); otherwise `.db` creation reports a clear error and stops.
 3. **code_analyzer**: analyzes the generated code.
 4. **repo_documenter**: writes project documentation under `docs/`.
 
 A smoke test (compile generated modules, verify each database) is written to
 `<project-root>/tmp/`. The database folder is chosen by precedence: the
 `--data-dir` option (highest) overrides the `CODE_ASSISTANT_DATA_DIR` (or
-`DATA_DIR`) environment variable, which overrides `paths.data_dir` in
-`config/defaults.yaml`; the built-in fallback is `data`. On overall success the
-starterfile is moved to `tmp/` with a timestamp; on failure it is left in place.
+`DATA_DIR`) environment variable, which overrides the `# PATHS` `data_dir`
+value, which overrides `paths.data_dir` in `config/defaults.yaml`; the built-in
+fallback is `data`. The directory is created only when the location came from
+one of the explicit sources (`--data-dir`, an environment variable, `# PATHS`,
+or `--interactive`); the `config/defaults.yaml`/built-in default is never
+created automatically. On overall success the starterfile is moved to `tmp/`
+with a timestamp; on failure it is left in place.
 
 The renderer alone can also be run:
 
@@ -120,9 +135,11 @@ An optional `--project-root /path/to/new_assistant` overrides its declared
 root. Existing specification files are preserved, and existing source files
 must be empty to pass the renderer’s initial check.
 
-Legacy starterfiles without `# PROJECT_ROOT:` retain current-working-directory
-semantics. The standalone `blueprint_renderer` only creates directories; it
-does not generate source code or specification file contents.
+New starterfiles declare their root in `# PATHS` (`root: .`). Legacy starterfiles
+that use the older `# PROJECT_ROOT:` marker are still recognised, and files with
+neither marker retain current-working-directory semantics. The standalone
+`blueprint_renderer` only creates directories; it does not generate source code
+or specification file contents.
 
 ### Optional generated-repository helpers
 

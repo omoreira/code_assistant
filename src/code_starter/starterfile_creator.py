@@ -38,6 +38,11 @@ try:
 except ImportError:  # Support direct-script execution.
     from blueprint_renderer import parse_repomap
 
+try:
+    from .starterfile_paths import parse_paths
+except ImportError:  # Support direct-script execution.
+    from starterfile_paths import parse_paths
+
 
 class StarterfileCreator:
     """Interactive builder for starterfile.pseudo"""
@@ -47,6 +52,7 @@ class StarterfileCreator:
         self.tree_structure = OrderedDict()  # {path: {'type': 'dir'|'file', 'children': [], ...}}
         self.pseudocodes = {}  # {filepath: {'input': '', 'output': '', 'task': '', ...}}
         self.database_section = ""  # Preserve optional # DATABASES content on load/save.
+        self.data_dir = "data"  # Declared in the # PATHS section on save.
         self.current_path = []  # Track current position in tree
     
     def main_menu(self):
@@ -116,6 +122,10 @@ class StarterfileCreator:
                 self.database_section = ""
                 print(f"Root directory set: {root}")
                 break
+
+        data_answer = input("Data directory (default: data): ").strip()
+        self.data_dir = data_answer or "data"
+        print(f"Data directory set: {self.data_dir}")
 
         for directory in BASE_DIRECTORIES:
             self._ensure_project_directory(directory)
@@ -274,7 +284,7 @@ class StarterfileCreator:
         # Load existing pseudocode if any
         existing = self.pseudocodes.get(filepath, {})
         
-        fields = ['input', 'output', 'task', 'conditions', 'preferences']
+        fields = ['input', 'output', 'task', 'conditions', 'preferences', 'env_vars']
         
         for field in fields:
             print(f"\n[{field.upper()}]")
@@ -322,9 +332,13 @@ class StarterfileCreator:
         """Generate the complete starterfile.pseudo content."""
         lines = []
 
-        # New starterfiles are portable: all declared paths are relative to
-        # the folder containing the starterfile.
-        lines.append("# PROJECT_ROOT: .\n")
+        # New starterfiles declare their generation-time paths in a # PATHS
+        # section. Declared paths are relative to the folder containing the
+        # starterfile, so the file stays portable.
+        lines.append("# PATHS\n")
+        lines.append("root: .")
+        lines.append("data_dir: {}".format(self.data_dir or "data"))
+        lines.append("\n")
         
         # REPOMAP section
         lines.append("# REPOMAP\n")
@@ -344,7 +358,7 @@ class StarterfileCreator:
             
             pseudo = self.pseudocodes.get(filepath, {})
             
-            for field in ['input', 'output', 'task', 'conditions', 'preferences']:
+            for field in ['input', 'output', 'task', 'conditions', 'preferences', 'env_vars']:
                 if pseudo.get(field):
                     lines.append(f"{field.upper()}: {pseudo[field]}")
                     lines.append("")
@@ -441,14 +455,23 @@ class StarterfileCreator:
                 if databases_match else ""
             )
 
+            declared_paths = parse_paths(filename)
+            if declared_paths.get("data_dir"):
+                self.data_dir = declared_paths["data_dir"]
+
             repomap_match = re.search(
                 r'^# REPOMAP\s*$(.*?)(?=^# PSEUDOCODE\s*$|\Z)',
                 content, flags=re.MULTILINE | re.DOTALL
             )
-            root_marker = re.search(r'^# PROJECT_ROOT:\s*(.*?)\s*$', content, re.MULTILINE)
-            portable_format = root_marker is not None
+            # A portable root may come from # PATHS (preferred) or the legacy
+            # # PROJECT_ROOT: marker; parse_paths() folds both into "root".
+            declared_root = declared_paths.get("root")
+            portable_format = declared_root is not None
             repomap_lines = repomap_match.group(1).splitlines() if repomap_match else []
-            root = str((Path(filename).expanduser().resolve().parent / root_marker.group(1)).resolve()) if portable_format else None
+            root = (
+                str((Path(filename).expanduser().resolve().parent / declared_root).resolve())
+                if portable_format else None
+            )
             if not portable_format:
                 for line in repomap_lines:
                     clean = re.sub(r'^[|\-+`_\s]+', '', line).strip()
@@ -515,7 +538,7 @@ class StarterfileCreator:
             field_labels = {
                 'INPUT': 'input', 'OUTPUT': 'output', 'TASK': 'task',
                 'TASKS GOAL': 'task', 'CONDITIONS': 'conditions',
-                'PREFERENCES': 'preferences',
+                'PREFERENCES': 'preferences', 'ENV_VARS': 'env_vars',
             }
             for file_path, body_text in sections.items():
                 normalized = os.path.normpath(os.path.join(root, file_path) if portable_format else file_path)
@@ -560,6 +583,7 @@ class StarterfileCreator:
             self.tree_structure = OrderedDict()
             self.pseudocodes = {}
             self.database_section = ""
+            self.data_dir = "data"
             print("✓ All data cleared")
 
 

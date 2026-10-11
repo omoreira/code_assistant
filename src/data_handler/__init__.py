@@ -21,6 +21,7 @@ from shared.constants import DEFAULT_DATA_DIR
 from data_handler.db_creator import (
     SCHEMA_DIR,
     DatabaseCreator,
+    DataDirectoryMissingError,
     Sqlite3UnavailableError,
     create_databases,
     sqlite3_path,
@@ -32,6 +33,7 @@ __all__ = [
     "DEFAULT_DATA_DIR",
     "SCHEMA_DIR",
     "DatabaseCreator",
+    "DataDirectoryMissingError",
     "Sqlite3UnavailableError",
     "create_databases",
     "sqlite3_path",

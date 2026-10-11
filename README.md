@@ -139,10 +139,12 @@ code-assistant
 
 Choose a target project root, enter the user-designed module names for its
 `src/` tree, and add source-file pseudocode. Save to create
-`<project-root>/starterfile.pseudo`. New starterfiles include a
-`# PROJECT_ROOT: .` marker, a root `benchmark/` directory, and a
+`<project-root>/starterfile.pseudo`. New starterfiles include a `# PATHS`
+section (`root: .` and `data_dir`), a root `benchmark/` directory, and a
 `# SPECIFICATIONS` section for `benchmark/benchmark.pseudo` and
-`ui/uidesign.pseudo`.
+`ui/uidesign.pseudo`. The `# PATHS` `data_dir` (like `--data-dir` or
+`CODE_ASSISTANT_DATA_DIR`) is created during generation; the implicit default
+`data/` is not created automatically.
 
 Generation only runs for an approved starterfile (one carrying a
 `# STATUS: APPROVED` marker). Run the full pipeline from the repository root:
