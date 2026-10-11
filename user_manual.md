@@ -345,6 +345,11 @@ Full guide: [Building a hybrid VS Code with Continue](docs/building_hybrid_vscod
   containing the starterfile; legacy files use the current working directory.
 - **`sqlite3` not found:** install the `sqlite3` command-line tool. The
   pipeline preflight requires it to build databases from `# DATABASES`.
+- **Data directory not created / `.db` creation fails:** the data directory is
+  created only when requested explicitly. Declare `data_dir` in the `# PATHS`
+  section, pass `--data-dir DIR`, set `CODE_ASSISTANT_DATA_DIR`/`DATA_DIR`, or
+  run with `--interactive`; the implicit `config/defaults.yaml`/`data` default
+  is not created automatically.
 - **Generation blocked by preflight:** set `# STATUS: APPROVED`, then review
   and resolve the errors in `docs/pseudocode_report.md`; the tagged copy under
   `tmp/` marks the offending lines.

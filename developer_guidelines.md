@@ -42,10 +42,10 @@ their prior working-directory behavior when neither is present.
 
 ### Treat pseudo files according to their purpose
 
-- `starterfile.pseudo` contains an optional `# REPOMAP`, an optional
-  `# DATABASES` section, source-code `# PSEUDOCODE` entries, optionally
-  `# SPECIFICATIONS` artifacts, and a `# STATUS:` approval marker. A section
-  body of `NONE` means "no items".
+- `starterfile.pseudo` contains an optional `# PATHS` section (`root` +
+  `data_dir`), an optional `# REPOMAP`, an optional `# DATABASES` section,
+  source-code `# PSEUDOCODE` entries, optionally `# SPECIFICATIONS` artifacts,
+  and a `# STATUS:` approval marker. A section body of `NONE` means "no items".
 - `patch.pseudo` contains `#PATCHES` unified diffs and `#NEW SCRIPTS` complete
   file contents.
 - `ui/uidesign.pseudo` describes a UI to be generated inside the target
@@ -146,7 +146,11 @@ recommended entry point: preflight runs `pseudocode_analyzer` and requires a
 `# STATUS: APPROVED` marker before any generation. `PseudocodeRenderer` reads
 REPOMAP directories, creates specification artifacts, creates source paths
 from PSEUDOCODE headers, creates SQLite databases from `# DATABASES` (through
-`sql_schema_creator` and `data_handler`), and converts source pseudocode. On
+`sql_schema_creator` and `data_handler`), and converts source pseudocode. The
+data directory is created only when its location is requested explicitly
+(`# PATHS` `data_dir`, `--data-dir`, `CODE_ASSISTANT_DATA_DIR`/`DATA_DIR`, or
+`--interactive`); the resolved default is never created as a side effect, so a
+`# DATABASES` section with no declared directory fails with guidance instead. On
 success the renderer archives the starterfile to `tmp/` with a timestamp
 (formerly it deleted the file); the pipeline defers that archive until every
 stage has succeeded. The renderer preserves existing specification files and

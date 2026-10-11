@@ -22,8 +22,9 @@ code as a draft and review it before use.
 ### Modules
 
 - **`code_starter`** builds a target repository from an approved
-  `starterfile.pseudo`. The creator defines a REPOMAP, optional `# DATABASES`,
-  and source pseudocode. The `pipeline` runs a preflight check, then creates
+  `starterfile.pseudo`. The creator defines a `# PATHS` section (project root
+  and data directory), a REPOMAP, optional `# DATABASES`, and source
+  pseudocode. The `pipeline` runs a preflight check, then creates
   directories and spec files, builds SQLite databases, converts source
   pseudocode with Ollama, analyzes the result, and documents the repository.
 - **`code_converter`** reads UTF-8 research notes and asks an LLM to produce
