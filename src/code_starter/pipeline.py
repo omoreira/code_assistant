@@ -17,7 +17,11 @@ A smoke test (compile generated modules, verify each database) is written to
 ``tmp/`` with a timestamp; on any failure it is left untouched.
 
 Usage:
-    python -m code_starter.pipeline <project_root> [--data-dir data]
+    python -m code_starter.pipeline [project_root] [--data-dir data]
+
+``project_root`` is optional: when omitted, the root declared in the
+starterfile's ``# PATHS`` section is used, falling back to the current working
+directory. An explicit ``project_root`` argument always wins.
 """
 
 from __future__ import annotations
@@ -57,7 +61,7 @@ class Pipeline:
 
     def __init__(
         self,
-        project_root: str = ".",
+        project_root: Optional[str] = None,
         starterfile: str = "starterfile.pseudo",
         *,
         data_dir: Optional[str] = None,
@@ -69,13 +73,21 @@ class Pipeline:
         documenter=None,
         sqlite_available=None,
     ) -> None:
-        self.project_root = Path(project_root).expanduser().resolve()
-        candidate = Path(starterfile)
-        self.starterfile = (
-            candidate if candidate.is_absolute() else self.project_root / candidate
+        explicit_root = (
+            Path(project_root).expanduser().resolve() if project_root else None
         )
+        base = explicit_root if explicit_root is not None else Path.cwd()
+        candidate = Path(starterfile).expanduser()
+        self.starterfile = candidate if candidate.is_absolute() else base / candidate
         # The starterfile may declare a # PATHS section (root + data_dir).
         self.paths = parse_paths(self.starterfile) or {}
+        # Project-root precedence: an explicit argument wins; otherwise a
+        # '# PATHS root:' (relative to the starterfile) is honoured; otherwise
+        # fall back to the current working directory.
+        declared_root = None
+        if self.paths.get("root"):
+            declared_root = (self.starterfile.parent / self.paths["root"]).resolve()
+        self.project_root = explicit_root or declared_root or Path.cwd().resolve()
         # Resolve the data-storage folder when the caller passes none:
         # CLI override -> CODE_ASSISTANT_DATA_DIR/DATA_DIR -> # PATHS -> config.
         self.data_dir = resolve_data_dir(
@@ -287,7 +299,15 @@ class Pipeline:
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("project_root", nargs="?", default=".")
+    parser.add_argument(
+        "project_root",
+        nargs="?",
+        default=None,
+        help=(
+            "Explicit project root (wins over the starterfile # PATHS root); "
+            "defaults to the current directory when omitted"
+        ),
+    )
     parser.add_argument("--starterfile", default="starterfile.pseudo")
     parser.add_argument(
         "--data-dir",

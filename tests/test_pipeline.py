@@ -138,3 +138,34 @@ def test_pipeline_leaves_starterfile_when_generation_fails(tmp_path):
     code_starter_stage = next(s for s in result.stages if s.name == "code_starter")
     assert not code_starter_stage.ok
     assert (tmp_path / "starterfile.pseudo").exists()
+
+
+DECLARED_ROOT = """# PATHS
+root: sub
+
+# REPOMAP
+
+sub
+
+# PSEUDOCODE
+
+## sub/src/app.py
+TASK: noop
+"""
+
+
+def test_declared_paths_root_used_when_project_root_omitted(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "starterfile.pseudo").write_text(DECLARED_ROOT, encoding="utf-8")
+
+    pipeline = Pipeline(starterfile="starterfile.pseudo")
+
+    assert pipeline.project_root == (tmp_path / "sub").resolve()
+
+
+def test_explicit_project_root_wins_over_declared(tmp_path, monkeypatch):
+    (tmp_path / "starterfile.pseudo").write_text(DECLARED_ROOT, encoding="utf-8")
+
+    pipeline = Pipeline(str(tmp_path), "starterfile.pseudo")
+
+    assert pipeline.project_root == tmp_path.resolve()

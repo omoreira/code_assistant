@@ -6,6 +6,13 @@ and benchmark code, and documenting or refactoring projects. Some modules are
 still in development. Review generated output before using it in a real
 project.
 
+>**Project context.** Code Assistant is an external module of the larger
+> **Sam AI** project. Sam AI is in private development, with its first
+> open-source release planned before the end of the year. A future Sam AI
+> integration adds a **DPO (Direct Preference Optimization)** strategy so local
+> models can learn individual users' patterns and retrieve a coding
+> best-practices database. This is roadmap material, not current functionality.
+
 ## 1. Install and configure
 
 Requirements are Python 3.8 or newer and pip. From the repository root:
@@ -88,7 +95,9 @@ New starterfiles have these sections:
   source code was already generated and generation is skipped. Each `## <path>`
   block may carry `INPUT`, `OUTPUT`, `TASK`, `CONDITIONS`, `PREFERENCES`, and
   `ENV_VARS` fields; `ENV_VARS` lists the environment variables (names and
-  defaults only -- never secrets) that the generated code expects to read.
+  defaults only -- never secrets) that the generated code expects to read. When
+  any `ENV_VARS` are declared, generation writes a `.env.example` at the project
+  root (existing files are never overwritten).
 - `# SPECIFICATIONS` describes editable pseudo files to place into the target
   repository, currently `benchmark/benchmark.pseudo` and `ui/uidesign.pseudo`.
 - `# STATUS: APPROVED` must be present before the pipeline generates code.
@@ -132,8 +141,13 @@ python -m code_starter.pseudocode_renderer /path/to/new_assistant/starterfile.ps
 ```
 
 An optional `--project-root /path/to/new_assistant` overrides its declared
-root. Existing specification files are preserved, and existing source files
-must be empty to pass the renderer’s initial check.
+root. The project root is chosen by precedence: an explicit `project_root`
+argument (the pipeline's first positional argument or `--project-root`) wins,
+otherwise the starterfile's `# PATHS` `root` is used (relative to the
+starterfile), otherwise the current working directory. `python -m
+code_starter.pipeline` therefore treats `project_root` as optional. Existing
+specification files are preserved, and existing source files must be empty to
+pass the renderer’s initial check.
 
 New starterfiles declare their root in `# PATHS` (`root: .`). Legacy starterfiles
 that use the older `# PROJECT_ROOT:` marker are still recognised, and files with

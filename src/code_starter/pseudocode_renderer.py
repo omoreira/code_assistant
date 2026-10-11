@@ -78,6 +78,11 @@ try:
 except ImportError:  # pragma: no cover - direct script execution
     from starterfile_paths import parse_paths
 
+try:
+    from .env_example import write_env_example
+except ImportError:  # pragma: no cover - direct script execution
+    from env_example import write_env_example
+
 
 # Bodies that mean "no items in this section".
 _NONE_TOKENS = {"", "NONE", "EMPTY"}
@@ -394,6 +399,13 @@ class PseudocodeRenderer:
         print("  Found {} source files and {} project specifications".format(
             len(file_pseudocodes), len(specifications)
         ))
+
+        if not pseudocode_none:
+            # Emit a .env.example from any ENV_VARS declarations (names only).
+            env_root = self.project_root or Path.cwd()
+            env_example = write_env_example(env_root, file_pseudocodes)
+            if env_example is not None:
+                print("  ✓ Wrote environment template: {}".format(env_example))
 
         if not pseudocode_none:
             # Step 2: Seed directories and create files using header paths.

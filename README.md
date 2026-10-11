@@ -19,6 +19,16 @@ turning research notes into patch plans, applying patches, and generating UI,
 benchmark, and documentation artifacts. Development is ongoing; treat generated
 code as a draft and review it before use.
 
+### Project context and roadmap
+
+Code Assistant is designed as an external module within the larger **Sam AI**
+project. Sam AI is currently in private development; its **first open-source
+release is planned before the end of the year**. A planned integration is Sam's
+**DPO (Direct Preference Optimization)** strategy, which will let local models
+learn individual users' patterns and retrieve a coding best-practices database
+to ground their suggestions. These capabilities are on the roadmap and are not
+part of the current release.
+
 ### Modules
 
 - **`code_starter`** builds a target repository from an approved
@@ -145,7 +155,8 @@ section (`root: .` and `data_dir`), a root `benchmark/` directory, and a
 `# SPECIFICATIONS` section for `benchmark/benchmark.pseudo` and
 `ui/uidesign.pseudo`. The `# PATHS` `data_dir` (like `--data-dir` or
 `CODE_ASSISTANT_DATA_DIR`) is created during generation; the implicit default
-`data/` is not created automatically.
+`data/` is not created automatically. Per-file `ENV_VARS` declarations produce a
+`.env.example` at the project root (never overwriting an existing file).
 
 Generation only runs for an approved starterfile (one carrying a
 `# STATUS: APPROVED` marker). Run the full pipeline from the repository root:
@@ -158,6 +169,9 @@ The pipeline runs a static preflight (required sections, approval marker,
 `sqlite3` and Ollama availability, and a `code_analyzer` starterfile review),
 then runs `code_starter` (skeleton, databases, source generation),
 `code_analyzer`, and `repo_documenter`, and writes a smoke test to `tmp/`.
+The project root comes from the positional argument; when omitted (direct
+`python -m code_starter.pipeline`), the starterfile's `# PATHS` root is used,
+falling back to the current directory.
 Source generation uses the configured Ollama model. On success the starterfile
 is moved to `tmp/` with a timestamp; on failure it is left in place. See
 [user_manual.md](user_manual.md) for the detailed workflow.

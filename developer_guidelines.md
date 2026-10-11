@@ -150,7 +150,11 @@ from PSEUDOCODE headers, creates SQLite databases from `# DATABASES` (through
 data directory is created only when its location is requested explicitly
 (`# PATHS` `data_dir`, `--data-dir`, `CODE_ASSISTANT_DATA_DIR`/`DATA_DIR`, or
 `--interactive`); the resolved default is never created as a side effect, so a
-`# DATABASES` section with no declared directory fails with guidance instead. On
+`# DATABASES` section with no declared directory fails with guidance instead.
+Project-root precedence is an explicit `project_root` argument > `# PATHS root`
+(relative to the starterfile) > the current working directory. Declared
+`ENV_VARS` fields produce a `.env.example` at the project root (only when
+present; existing files are preserved). On
 success the renderer archives the starterfile to `tmp/` with a timestamp
 (formerly it deleted the file); the pipeline defers that archive until every
 stage has succeeded. The renderer preserves existing specification files and
