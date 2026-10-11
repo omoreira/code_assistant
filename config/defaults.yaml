@@ -57,6 +57,9 @@ llm:
 
 paths:
   output_dir: "./generated_projects"
+  # Default SQLite data-storage folder for generated target projects.
+  # Override via the CODE_ASSISTANT_DATA_DIR / DATA_DIR env vars or --data-dir.
+  data_dir: "data"
   config_dir: "./config"
   docs_dir: "./docs"
   tests_dir: "./tests"

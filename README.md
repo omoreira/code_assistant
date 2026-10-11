@@ -48,10 +48,7 @@ code as a draft and review it before use.
   configuration, logging, and utilities.
 
 `tools/` and `assistant_contracts/` are reserved support packages with little
-or no implementation currently. The top-level `data/` directory is likewise
-reserved: it is kept empty for a future epistemic-rigor subsystem (graph-based
-memory retrieval plus a DPO preference system) and is not read or written by any
-current code.
+or no implementation currently. 
 
 The root-level `ui/` and `benchmark/` folders described above are defaults for
 generated repositories; the assistant itself keeps those tools under `src/`.
@@ -224,7 +221,6 @@ code_assistant/
 ├── scripts/                 # Shell helpers and module launchers
 │   └── ollama/              # Hardened Ollama wrappers (hybrid Continue)
 ├── templates/               # Continue hybrid rule templates
-├── data/                    # Reserved (empty): future epistemic-rigor store
 ├── src/
 │   ├── code_starter/        # Project scaffolding and source generation
 │   ├── code_converter/      # Research notes to patch pseudocode

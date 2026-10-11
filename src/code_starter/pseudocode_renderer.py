@@ -54,6 +54,15 @@ except ImportError:  # pragma: no cover - direct execution without PYTHONPATH=sr
         )
 
 
+try:
+    from shared.paths_config import resolve_data_dir
+except ImportError:  # pragma: no cover - direct execution without PYTHONPATH=src
+
+    def resolve_data_dir(override: Optional[str] = None, **kwargs) -> str:  # type: ignore
+        """Minimal fallback mirroring shared.constants.DEFAULT_DATA_DIR."""
+        return override or "data"
+
+
 # Bodies that mean "no items in this section".
 _NONE_TOKENS = {"", "NONE", "EMPTY"}
 
@@ -103,14 +112,16 @@ class PseudocodeRenderer:
         self,
         starterfile: str = 'starterfile.pseudo',
         project_root: Optional[str] = None,
-        data_dir: str = 'data',
+        data_dir: Optional[str] = None,
         interactive: bool = False,
         archive: bool = True,
     ):
         self.starterfile = str(Path(starterfile).expanduser())
         self.project_root = Path(project_root).expanduser().resolve() if project_root else None
         self._project_root_explicit = project_root is not None
-        self.data_dir = data_dir
+        # Resolve the data-storage folder when none is given (config -> env ->
+        # built-in), so a user-set default flows through to database creation.
+        self.data_dir = data_dir or resolve_data_dir()
         self.interactive = interactive
         self.archive = archive
         self.mode = None

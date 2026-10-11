@@ -32,8 +32,8 @@ from typing import List, Optional
 
 from code_analyzer.pseudocode_analyzer import PseudocodeAnalyzer
 from code_starter.pseudocode_renderer import PseudocodeRenderer, archive_starterfile
-
-DEFAULT_DATA_DIR = "data"
+from shared.constants import DEFAULT_DATA_DIR
+from shared.paths_config import resolve_data_dir
 
 
 @dataclass
@@ -59,7 +59,7 @@ class Pipeline:
         project_root: str = ".",
         starterfile: str = "starterfile.pseudo",
         *,
-        data_dir: str = DEFAULT_DATA_DIR,
+        data_dir: Optional[str] = None,
         use_llm: bool = False,
         llm_interface=None,
         interactive: bool = False,
@@ -73,7 +73,9 @@ class Pipeline:
         self.starterfile = (
             candidate if candidate.is_absolute() else self.project_root / candidate
         )
-        self.data_dir = data_dir
+        # Resolve the data-storage folder when the caller passes none:
+        # config/defaults.yaml -> CODE_ASSISTANT_DATA_DIR/DATA_DIR -> built-in.
+        self.data_dir = data_dir or resolve_data_dir()
         self.use_llm = use_llm
         self._llm = llm_interface
         self.interactive = interactive
@@ -282,7 +284,14 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("project_root", nargs="?", default=".")
     parser.add_argument("--starterfile", default="starterfile.pseudo")
-    parser.add_argument("--data-dir", default=DEFAULT_DATA_DIR)
+    parser.add_argument(
+        "--data-dir",
+        default=None,
+        help=(
+            "Database storage path. Overrides CODE_ASSISTANT_DATA_DIR/DATA_DIR "
+            "and paths.data_dir (built-in default: {})".format(DEFAULT_DATA_DIR)
+        ),
+    )
     parser.add_argument("--use-llm", action="store_true")
     parser.add_argument("--interactive", action="store_true")
     from shared.llm_config import resolve_llm

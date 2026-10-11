@@ -104,9 +104,11 @@ The pipeline runs four stages:
 4. **repo_documenter**: writes project documentation under `docs/`.
 
 A smoke test (compile generated modules, verify each database) is written to
-`<project-root>/tmp/`. The `--data-dir` option (default `data`) selects the
-database folder. On overall success the starterfile is moved to `tmp/` with a
-timestamp; on failure it is left in place.
+`<project-root>/tmp/`. The database folder is chosen by precedence: the
+`--data-dir` option (highest) overrides the `CODE_ASSISTANT_DATA_DIR` (or
+`DATA_DIR`) environment variable, which overrides `paths.data_dir` in
+`config/defaults.yaml`; the built-in fallback is `data`. On overall success the
+starterfile is moved to `tmp/` with a timestamp; on failure it is left in place.
 
 The renderer alone can also be run:
 

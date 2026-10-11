@@ -17,8 +17,7 @@ import subprocess
 from pathlib import Path
 from typing import Callable, List, Optional
 
-#: Default data-storage directory, relative to the target project root.
-DEFAULT_DATA_DIR = "data"
+from shared.paths_config import resolve_data_dir
 
 #: Where ``sql_schema_creator`` writes generated schema files.
 SCHEMA_DIR = Path("src") / "data_handler" / "sqlite_schema"
@@ -88,7 +87,9 @@ class DatabaseCreator:
                     self.project_root
                 )
             )
-        self.default_data_dir = data_dir or DEFAULT_DATA_DIR
+        # Fall back to the resolved default (config/defaults.yaml -> env vars
+        # -> built-in) when the caller passes no explicit directory.
+        self.default_data_dir = data_dir or resolve_data_dir()
         self.interactive = interactive
         self._runner = runner or _default_runner
 

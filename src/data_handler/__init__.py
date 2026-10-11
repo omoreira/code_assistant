@@ -16,8 +16,9 @@ Example:
     created = creator.create_all()
 """
 
+from shared.constants import DEFAULT_DATA_DIR
+
 from data_handler.db_creator import (
-    DEFAULT_DATA_DIR,
     SCHEMA_DIR,
     DatabaseCreator,
     Sqlite3UnavailableError,

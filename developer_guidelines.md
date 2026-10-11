@@ -76,9 +76,6 @@ src/
 packages. Add code to them only when the responsibility and shared interface
 are clear; do not use them as miscellaneous catch-all folders.
 
-The top-level `data/` directory is reserved and kept empty for a later
-epistemic-rigor subsystem (graph-based memory retrieval + DPO). No current code
-reads or writes it.
 
 ## 3. Environment and package layout
 
@@ -226,9 +223,6 @@ Before accepting a change, review the diff for:
 - `tools/` and `assistant_contracts/` are reserved, mostly empty support
   packages. `data_handler` implements SQLite database creation from generated
   schemas.
-- `data/` is reserved and empty; it will host the future epistemic-rigor
-  subsystem (graph-based memory retrieval + DPO preference system). No current
-  code reads or writes it.
 - LLM-backed generation depends on a working local Ollama service unless a
   caller injects another compatible interface.
 - `code_starter.github_repo_planner` writes a generated project's

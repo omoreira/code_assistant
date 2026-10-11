@@ -77,6 +77,11 @@ FILE_PATTERNS = {
 # Default Paths
 DEFAULT_OUTPUT_DIR = "./generated_projects"
 DEFAULT_CONFIG_DIR = "./config"
+#: Default SQLite data-storage directory for generated target projects,
+#: relative to the target project root. Overridable via `paths.data_dir` in
+#: config/defaults.yaml, the CODE_ASSISTANT_DATA_DIR / DATA_DIR env vars, or an
+#: explicit `--data-dir` flag (highest precedence). See shared.paths_config.
+DEFAULT_DATA_DIR = "data"
 DEFAULT_DOCS_DIR = "./docs"
 DEFAULT_TESTS_DIR = "./tests"
 
