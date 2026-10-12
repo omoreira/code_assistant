@@ -18,8 +18,13 @@ from pathlib import Path
 
 import streamlit as st
 
+from core import database_model as db_model
 from core import paths as ui_paths
+from core import pseudocode_model as pm
+from core import repomap_tree as rt
+from core import starterfile_view as sfview
 from core.pipeline_runner import collect_artifacts, start_pipeline
+from core.project_scanner import scan_project_root
 from core.verify import (
     verify_databases,
     verify_paths,
@@ -28,20 +33,30 @@ from core.verify import (
     verify_starterfile,
 )
 from code_starter.starterfile_builder import StarterfileBuilder
+from views.database_builder import render_database_builder
+from views.pseudocode_builder import render_pseudocode_builder
+from views.repomap_editor import render_repomap_editor
 
 _STAGE_RE = re.compile(r"\[(OK|FAIL)\]\s+(\S+):\s*(.*)")
 
 
 def _init_state() -> None:
     ss = st.session_state
+    ss.setdefault("starter_mode", "Create new")
     ss.setdefault("starter_project_root", str(ui_paths.WORKSPACE_DIR))
     ss.setdefault("starter_file_name", "starterfile.pseudo")
     ss.setdefault("sf_paths_root", ".")
     ss.setdefault("sf_paths_data_dir", "data")
     ss.setdefault("sf_repomap", "")
+    ss.setdefault("sf_repomap_tree", None)
     ss.setdefault("sf_databases", "NONE")
+    ss.setdefault("sf_databases_model", None)
+    ss.setdefault("sf_databases_src", None)
     ss.setdefault("sf_pseudocode", "")
+    ss.setdefault("sf_pseudocode_model", None)
+    ss.setdefault("sf_pseudocode_src", None)
     ss.setdefault("sf_verified", {})
+    ss.setdefault("sf_appended", {})
     ss.setdefault("starter_run", None)
 
 
@@ -76,8 +91,8 @@ def _merge_into_file(sections) -> Path:
     return builder.write()
 
 
-def _verify_save_row(label, state_key, signature, verify_fn, sections) -> None:
-    """Render the Verify button and, once passed, the Save button."""
+def _verify_save_row(label, state_key, signature, verify_fn, sections, save_label="Save section") -> None:
+    """Render the Verify button and, once passed, the write-to-disk button."""
     verified = st.session_state.sf_verified
     if st.button("Verify", key="verify_" + state_key):
         ok, message = verify_fn()
@@ -88,8 +103,9 @@ def _verify_save_row(label, state_key, signature, verify_fn, sections) -> None:
             verified.pop(state_key, None)
             st.error("{}: verification failed\n\n{}".format(label, message))
     if verified.get(state_key) == signature:
-        if st.button("Save section", key="save_" + state_key, type="primary"):
+        if st.button(save_label, key="save_" + state_key, type="primary"):
             path = _merge_into_file(sections)
+            st.session_state.setdefault("sf_appended", {})[state_key] = True
             st.success("Saved {} to {}".format(label, path))
 
 
@@ -103,6 +119,127 @@ def _verify_roads() -> tuple:
     return False, "\n".join(m for ok, m in ((ok1, msg1), (ok2, msg2)) if not ok)
 
 
+def _reset_editor_state(ss) -> None:
+    """Clear the per-section editor fields to their blank defaults."""
+    ss.sf_paths_root = "."
+    ss.sf_paths_data_dir = "data"
+    ss.sf_repomap = ""
+    ss.sf_repomap_tree = None
+    ss.sf_databases = "NONE"
+    ss.sf_databases_model = None
+    ss.sf_pseudocode = ""
+    ss.sf_pseudocode_model = None
+    ss.sf_verified = {}
+    ss.sf_appended = {}
+
+
+def _apply_builder(ss, builder) -> None:
+    """Copy a loaded builder's sections into the editor session state."""
+    ss.sf_paths_root = builder.root
+    ss.sf_paths_data_dir = builder.data_dir
+    ss.sf_repomap = builder.repomap
+    ss.sf_repomap_tree = None  # force the tree editor to reparse
+    ss.sf_databases = builder.databases
+    ss.sf_databases_model = None  # force the databases builder to reparse
+    ss.sf_pseudocode = builder.pseudocode
+    ss.sf_pseudocode_model = None  # force the pseudocode builder to reparse
+    ss.sf_verified = {}
+    ss.sf_appended = {}
+
+
+def _persist_databases() -> None:
+    """Rewrite the on-disk DATABASES section after an edit, once it was appended."""
+    ss = st.session_state
+    if ss.get("sf_appended", {}).get("databases") and _starterfile_path().is_file():
+        _merge_into_file(["DATABASES"])
+
+
+def _persist_pseudocode() -> None:
+    """Rewrite the on-disk PSEUDOCODE section after an edit, once it was appended."""
+    ss = st.session_state
+    if ss.get("sf_appended", {}).get("pseudocode") and _starterfile_path().is_file():
+        _merge_into_file(["PSEUDOCODE"])
+
+
+def _verify_pseudocode_all() -> tuple:
+    """Verify PSEUDOCODE with the analyzer, plus a REPOMAP folder cross-check."""
+    ss = st.session_state
+    ok, message = verify_pseudocode(ss.sf_pseudocode)
+    folders = pm.folders_from_repomap(ss.sf_repomap)
+    orphans = pm.orphan_paths(pm.parse(ss.sf_pseudocode), folders)
+    if orphans:
+        message += "\n" + "\n".join(
+            "WARNING: `structure-orphan-file` — {} is not under any REPOMAP directory".format(
+                path
+            )
+            for path in orphans
+        )
+    return ok, message
+
+
+def _render_create(path: Path, ss) -> None:
+    """Create-new controls: scan the project root, then write a fresh file."""
+    root = Path(ss.starter_project_root).expanduser()
+    st.caption("Create a new starterfile in the project root entered above.")
+    exists = path.is_file()
+    overwrite = False
+    if exists:
+        st.warning("A starterfile already exists at `{}`.".format(path))
+        overwrite = st.checkbox("Overwrite the existing file", key="starter_overwrite")
+
+    col_scan, col_create = st.columns(2)
+    scan_clicked = col_scan.button(
+        "🔍 Scan root → REPOMAP",
+        key="starter_scan",
+        disabled=not root.is_dir(),
+        help="Auto-fill REPOMAP from the folder tree under the project root.",
+    )
+    create_clicked = col_create.button(
+        "➕ Create starterfile",
+        key="starter_create",
+        type="primary",
+        disabled=exists and not overwrite,
+    )
+
+    if scan_clicked:
+        tree = scan_project_root(root)
+        ss.sf_repomap = rt.to_text(tree)
+        ss.sf_repomap_tree = None
+        ss.sf_verified = {}
+        found = rt.count(tree)
+        if found:
+            st.success("Found {} director(ies) under {}".format(found, root))
+        else:
+            st.info("No sub-directories found under {}.".format(root))
+
+    if create_clicked and not (exists and not overwrite):
+        if not root.is_dir():
+            st.error("Project root does not exist: {}".format(root))
+        else:
+            _reset_editor_state(ss)
+            if not ss.sf_repomap.strip():
+                ss.sf_repomap = rt.to_text(scan_project_root(root))
+            ss.sf_repomap_tree = None
+            path.parent.mkdir(parents=True, exist_ok=True)
+            _assemble().write()
+            st.success(
+                "Created {} ({} director(ies) in REPOMAP).".format(
+                    path, rt.count(rt.parse_text(ss.sf_repomap))
+                )
+            )
+
+
+def _render_load(path: Path, ss) -> None:
+    """Load-existing controls: read an on-disk starterfile into the editor."""
+    st.caption("Load an existing starterfile into the editor.")
+    if st.button("Load existing starterfile", key="starter_load"):
+        if path.is_file():
+            _apply_builder(ss, StarterfileBuilder.from_file(path))
+            st.success("Loaded {}".format(path))
+        else:
+            st.warning("No file at {}".format(path))
+
+
 def render() -> None:
     _init_state()
     st.header("Starter")
@@ -111,6 +248,12 @@ def render() -> None:
     )
 
     ss = st.session_state
+    mode = st.radio(
+        "Start from",
+        ["Create new", "Load existing"],
+        horizontal=True,
+        key="starter_mode",
+    )
     ss.starter_project_root = st.text_input(
         "Project root", value=ss.starter_project_root, key="w_starter_project_root"
     )
@@ -118,21 +261,13 @@ def render() -> None:
         "Starterfile name", value=ss.starter_file_name, key="w_starter_file_name"
     )
 
-    col_load, _ = st.columns([1, 3])
-    if col_load.button("Load existing starterfile"):
-        path = _starterfile_path()
-        if path.is_file():
-            builder = StarterfileBuilder.from_file(path)
-            ss.sf_paths_root = builder.root
-            ss.sf_paths_data_dir = builder.data_dir
-            ss.sf_repomap = builder.repomap
-            ss.sf_databases = builder.databases
-            ss.sf_pseudocode = builder.pseudocode
-            ss.sf_verified = {}
-            st.success("Loaded {}".format(path))
-        else:
-            st.warning("No file at {}".format(path))
+    path = _starterfile_path()
+    if mode == "Create new":
+        _render_create(path, ss)
+    else:
+        _render_load(path, ss)
 
+    st.divider()
     tab_paths, tab_db, tab_pseudo, tab_review = st.tabs(
         ["Roadmap & Paths", "Databases", "Pseudocode", "Review & Run"]
     )
@@ -143,11 +278,8 @@ def render() -> None:
             "PATHS root (relative to the starterfile)", key="sf_paths_root"
         )
         st.text_input("PATHS data_dir", key="sf_paths_data_dir")
-        st.text_area(
-            "REPOMAP directory tree (indentation matters; use NONE for none)",
-            key="sf_repomap",
-            height=240,
-        )
+        st.markdown("**REPOMAP**")
+        render_repomap_editor()
         _verify_save_row(
             "Roadmap & Paths",
             "roads",
@@ -158,12 +290,16 @@ def render() -> None:
 
     # -- Tab 2: DATABASES -----------------------------------------------
     with tab_db:
-        st.text_area(
-            "DATABASES specification (use NONE for none)",
-            key="sf_databases",
-            height=300,
+        render_database_builder(on_change=_persist_databases)
+        _verify_save_row(
+            "Databases",
+            "databases",
+            ss.sf_databases,
+            lambda: verify_databases(ss.sf_databases),
+            ["DATABASES"],
+            save_label="Append DATABASES to starterfile",
         )
-        with st.expander("DATABASES format"):
+        with st.expander("DATABASES format (reference)"):
             st.code(
                 "example.db\n"
                 "table 1 name: users\n"
@@ -172,56 +308,52 @@ def render() -> None:
                 "- name: display name\n",
                 language="text",
             )
-        _verify_save_row(
-            "Databases",
-            "databases",
-            ss.sf_databases,
-            lambda: verify_databases(ss.sf_databases),
-            ["DATABASES"],
-        )
 
     # -- Tab 3: PSEUDOCODE ----------------------------------------------
     with tab_pseudo:
-        st.text_area(
-            "PSEUDOCODE entries (use NONE for none)",
-            key="sf_pseudocode",
-            height=360,
+        render_pseudocode_builder(on_change=_persist_pseudocode)
+        _verify_save_row(
+            "Pseudocode",
+            "pseudocode",
+            ss.sf_pseudocode,
+            _verify_pseudocode_all,
+            ["PSEUDOCODE"],
+            save_label="Append PSEUDOCODE to starterfile",
         )
-        with st.expander("PSEUDOCODE format"):
+        with st.expander("PSEUDOCODE format (reference)"):
             st.code(
                 "## src/pkg/module.py\n"
                 "INPUT: what the module reads\n"
                 "OUTPUT: what it produces\n"
                 "TASK: responsibilities and steps\n"
-                "CONDITIONS: constraints and error cases\n",
+                "CONDITIONS: constraints and error cases\n"
+                "PREFERENCES: style or library preferences\n"
+                "FUNCTION MODEL:\n"
+                "  - name: score\n"
+                "    kind: math\n"
+                "    formula: sum(values) / len(values)\n",
                 language="text",
             )
-        _verify_save_row(
-            "Pseudocode",
-            "pseudocode",
-            ss.sf_pseudocode,
-            lambda: verify_pseudocode(ss.sf_pseudocode),
-            ["PSEUDOCODE"],
-        )
 
     # -- Tab 4: Review & Run --------------------------------------------
     with tab_review:
         path = _starterfile_path()
-        if "sf_review" not in ss:
-            ss.sf_review = path.read_text(encoding="utf-8") if path.is_file() else _assemble().render()
-        st.text_area("Assembled starterfile.pseudo (editable)", key="sf_review", height=380)
+        assembled = _assemble().render()
+
+        _render_review_summary(ss)
+        st.markdown(
+            "**Assembled `{}`** — auto-assembled from the sections above.".format(path.name)
+        )
+        _render_starterfile(assembled)
 
         col_a, col_b = st.columns(2)
-        if col_a.button("Reassemble from sections"):
-            ss.sf_review = _assemble().render()
-        if col_b.button("Write reviewed file"):
+        if col_a.button("Write assembled file"):
             path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(ss.sf_review, encoding="utf-8")
+            path.write_text(assembled, encoding="utf-8")
             st.success("Wrote {}".format(path))
-
-        if st.button("Verify whole file"):
+        if col_b.button("Verify whole file"):
             path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(ss.sf_review, encoding="utf-8")
+            path.write_text(assembled, encoding="utf-8")
             ok, message = verify_starterfile(path)
             (st.success if ok else st.error)("{}".format(message))
 
@@ -231,7 +363,7 @@ def render() -> None:
         col_run, col_clear = st.columns(2)
         if col_run.button("Run pipeline", type="primary"):
             path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(ss.sf_review, encoding="utf-8")
+            path.write_text(assembled, encoding="utf-8")
             ss.starter_run = start_pipeline(
                 ui_paths.REPO_ROOT,
                 Path(ss.starter_project_root).expanduser(),
@@ -243,6 +375,26 @@ def render() -> None:
             ss.starter_run = None
 
         _render_run(ss)
+
+
+def _render_starterfile(text: str) -> None:
+    """Show a starterfile as coloured, read-only HTML for human review."""
+    st.markdown(sfview.CSS + sfview.colorize(text), unsafe_allow_html=True)
+
+
+def _render_review_summary(ss) -> None:
+    """Colourful counters summarising the assembled file at a glance."""
+    databases = db_model.parse(ss.sf_databases)
+    modules = pm.parse(ss.sf_pseudocode)
+    counters = [
+        ("Directories", rt.count(rt.parse_text(ss.sf_repomap))),
+        ("Databases", db_model.count(databases)),
+        ("Tables", db_model.count_tables(databases)),
+        ("Modules", pm.count(modules)),
+        ("Functions", pm.count_functions(modules)),
+    ]
+    for column, (label, value) in zip(st.columns(len(counters)), counters):
+        column.metric(label, value)
 
 
 def _render_run(ss) -> None:

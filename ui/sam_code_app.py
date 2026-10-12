@@ -2,11 +2,11 @@
 
 Run from the repository root:
 
-    streamlit run ui/app.py
+    streamlit run ui/sam_code_app.py
 
 Or from inside `ui/`:
 
-    streamlit run app.py
+    streamlit run sam_code_app.py
 
 The app wraps the packages under ``src/`` (code_starter, code_converter,
 code_analyzer) and keeps only presentation logic here. Application logic lives
@@ -39,12 +39,16 @@ st.set_page_config(
 # Hard-block when Ollama is unavailable (all LLM-backed pages depend on it).
 require_ollama()
 
+# Every page callable is named `render`, and st.Page infers a page's URL
+# pathname from the callable's __name__ (not from the title), so we must give
+# each page an explicit, unique url_path — otherwise Streamlit raises
+# "Multiple Pages specified with URL pathname render".
 navigation = st.navigation(
     [
-        st.Page(starter.render, title="Starter", icon="🧭", default=True),
-        st.Page(editor.render, title="Editor", icon="📝"),
-        st.Page(converter.render, title="Converter", icon="🔄"),
-        st.Page(patcher.render, title="Patcher", icon="🩹"),
+        st.Page(starter.render, title="Starter", icon="🧭", url_path="starter", default=True),
+        st.Page(editor.render, title="Editor", icon="📝", url_path="editor"),
+        st.Page(converter.render, title="Converter", icon="🔄", url_path="converter"),
+        st.Page(patcher.render, title="Patcher", icon="🩹", url_path="patcher"),
     ]
 )
 navigation.run()

@@ -246,6 +246,7 @@ class PseudocodeAnalyzer:
                     report, "WARNING", current_line, "task-missing",
                     "PSEUDOCODE entry {!r} has no TASK field".format(current_path),
                 )
+            self._check_function_model(report, current_path, current_line, body_buffer)
 
         for index, text in body:
             match = _PSEUDO_HEADER.match(text)
@@ -309,6 +310,19 @@ class PseudocodeAnalyzer:
                         )
         flush()
         return paths
+
+    def _check_function_model(self, report, path, line, body_lines) -> None:
+        """Validate an entry's optional FUNCTION MODEL.
+
+        Delegates to :mod:`code_starter.function_model`. Absence is allowed here
+        (the UI can require it); malformed models, duplicate functions, missing
+        formulas/criteria and unparseable math are reported as tags.
+        """
+        from code_starter import function_model as fm
+
+        _, findings = fm.analyze("\n".join(body_lines))
+        for finding in findings:
+            self._add(report, finding.severity, line, finding.code, finding.message)
 
     def _check_databases(self, report, sections) -> List[str]:
         entry = sections.get("DATABASES")

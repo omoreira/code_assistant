@@ -24,7 +24,7 @@ cd -- "$PROJECT_DIR"
 VENV_DIR="$PROJECT_DIR/venv"
 
 # UI settings
-UI_APP="$PROJECT_DIR/ui/app.py"
+UI_APP="$PROJECT_DIR/ui/sam_code_app.py"
 UI_PORT="8503"
 
 print_error() {

@@ -9,16 +9,35 @@ PAGES:
 - Patcher: a context-aware chat that reads project files and proposes patches.
 
 WORKFLOWS:
+Starter starts with a mode choice: **Create new** (enter a project root, then
+optionally "Scan root -> REPOMAP" to auto-fill the directory tree from the
+folder layout, then "Create starterfile" writes a fresh file) or **Load
+existing** (read an on-disk starterfile into the editor). The REPOMAP is edited
+as a tree (add/rename/delete directories), not as raw text.
 Starter has four tabs. Tab 1 edits # PATHS and # REPOMAP, tab 2 edits
 # DATABASES, tab 3 edits # PSEUDOCODE, tab 4 reviews the assembled file and
-runs the code_starter pipeline. Each of tabs 1-3 has a Verify button; on
-success a Save button appears and the section is written into the starterfile.
-Tab 4 runs the pipeline in the background and shows a per-stage report.
+runs the code_starter pipeline. Tabs 1-3 are edited with structured widgets:
+REPOMAP as a tree (add/rename/delete directories); the Databases tab as a
+builder (add databases -> tables -> columns with add/remove controls, where
+every table needs an identifier column); the Pseudocode tab as one card per
+script module -- a path chosen from the REPOMAP folders, the preset fields
+(INPUT, OUTPUT, TASK, CONDITIONS, PREFERENCES) and an optional FUNCTION MODEL
+(steps, math formulas, criteria). Each of tabs 1-3 has a Verify button; on
+success a write button appears (tab 2's reads "Append DATABASES to
+starterfile", tab 3's "Append PSEUDOCODE to starterfile") and the section is
+written into the starterfile. PSEUDOCODE verification also cross-checks every
+module path against the REPOMAP folders (the structure-orphan-file rule). Once
+a section is appended, later edits and removals rewrite that section on disk.
+Tab 4 auto-assembles the sections (no manual reassembly) and shows the whole
+file as coloured, read-only HTML with summary counters; it can write/verify the
+file and then runs the pipeline in the background, showing a per-stage report.
 
 INPUTS AND OUTPUTS:
-Project root and starterfile name are inputs. Editors are multi-line text
-areas. Verification failures are shown as errors; successes as messages. The
-pipeline report shows each stage pass/fail plus the smoke-test artifact.
+Project root and starterfile name are inputs. Section editors are multi-line
+text areas and a tree widget; files are also rewritten directly on disk by
+Create and Save. Verification failures are shown as errors; successes as
+messages. The pipeline report shows each stage pass/fail plus the smoke-test
+artifact.
 
 VISUAL DESIGN:
 A left sidebar lists the four pages. Wide layout, one primary column, tabs for

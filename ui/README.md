@@ -7,7 +7,7 @@ UI.
 ## Running
 
 From the repository root, the launcher sets up the venv, installs
-dependencies, and starts the app on port 8503:
+dependencies, and starts the app:
 
 ```bash
 bash scripts/codeassistant_ui.sh          # override the port with --port PORT
@@ -17,15 +17,16 @@ Or run Streamlit directly:
 
 ```bash
 python -m pip install -r requirements.txt      # adds streamlit>=1.36
-streamlit run ui/app.py
+streamlit run ui/sam_code_app.py
 ```
 
-The app listens on **port 8503** (see `ui/.streamlit/config.toml`) so it does
-not collide with an app already using the default 8501. Change it either in the
-config file or on the command line:
+The port is not pinned in the repo: when launched by the **local hub**
+(`local_hub/hub_launcher.py`) the hub passes an explicit free
+`--server.port`. Standalone runs fall back to Streamlit's default 8501, which
+you can override on the command line:
 
 ```bash
-streamlit run ui/app.py --server.port 8504
+streamlit run ui/sam_code_app.py --server.port 8504
 ```
 
 ## Pages

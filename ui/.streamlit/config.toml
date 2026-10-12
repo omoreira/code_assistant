@@ -1,9 +1,13 @@
 # Streamlit configuration for the code-assistant UI.
-# Runs the assistant on port 8503 so it does not collide with the "sam ai"
-# app already using the default 8501. Override at launch with
+#
+# The port is intentionally NOT pinned here anymore. The old `port = 8503` was
+# a band-aid to dodge the "sam ai" app on 8501 and causes collisions as soon as
+# another app appears. Ports are now assigned centrally by the local hub, which
+# launches this app with an explicit `--server.port <free_port>` (a CLI flag
+# overrides this file). Running the app standalone falls back to Streamlit's
+# default 8501; override with:
 #   streamlit run app.py --server.port 8504
 [server]
-port = 8503
 headless = true
 
 [browser]

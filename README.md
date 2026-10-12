@@ -242,10 +242,10 @@ bash scripts/codeassistant_ui.sh
 ```
 
 The launcher creates/activates the project virtual environment, installs
-dependencies, and runs `streamlit run ui/app.py` on **port 8503** (chosen so it
-does not collide with an app already using the default 8501). Override the port
-with `--port PORT`, or forward options to `streamlit run` after `--`. The UI
-hard-blocks with a message unless a local Ollama server is reachable. See
+dependencies, and runs `streamlit run ui/sam_code_app.py` (the port is assigned
+by the local hub when it launches this app; standalone runs use 8501). Override
+the port with `--port PORT`, or forward options to `streamlit run` after `--`.
+The UI hard-blocks with a message unless a local Ollama server is reachable. See
 [`ui/README.md`](ui/README.md) for the page-by-page breakdown.
 
 ## Repository Layout
