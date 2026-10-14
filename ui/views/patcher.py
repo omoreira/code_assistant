@@ -1,4 +1,4 @@
-"""Patcher page: a context-aware chat that reads project files and proposes patches.
+"""Assistant (patcher) page: a context-aware chat that reads project files and proposes patches.
 
 The chat is fed a bounded snapshot of user-selected project files. When the
 model proposes edits it must emit a ``patch.pseudo`` block (``#PATCHES`` /
@@ -114,7 +114,7 @@ def _prepare_patch(patch_text: str, root: str):
 
 def render() -> None:
     _init_state()
-    st.header("Patcher")
+    st.header("Project Assistant")
     st.caption("A context-aware chat that reads project files and proposes patches.")
 
     ss = st.session_state

@@ -48,7 +48,7 @@ navigation = st.navigation(
         st.Page(starter.render, title="Starter", icon="🧭", url_path="starter", default=True),
         st.Page(editor.render, title="Editor", icon="📝", url_path="editor"),
         st.Page(converter.render, title="Converter", icon="🔄", url_path="converter"),
-        st.Page(patcher.render, title="Patcher", icon="🩹", url_path="patcher"),
+        st.Page(patcher.render, title="Assistant", icon="🔍", url_path="patcher"),
     ]
 )
 navigation.run()
