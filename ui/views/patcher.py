@@ -18,6 +18,7 @@ import streamlit as st
 
 from core import paths as ui_paths
 from core.llm import get_llm
+from core.local_path_picker import render_path_picker
 
 _TEXT_SUFFIXES = {
     ".py", ".pyi", ".md", ".txt", ".toml", ".yaml", ".yml", ".json",
@@ -118,7 +119,9 @@ def render() -> None:
     st.caption("A context-aware chat that reads project files and proposes patches.")
 
     ss = st.session_state
-    st.text_input("Project root", key="patcher_root")
+    render_path_picker(
+        "Project root", "patcher_root", "directory", str(ui_paths.REPO_ROOT)
+    )
     root = Path(ss.patcher_root).expanduser()
 
     with st.expander("Context files", expanded=not ss.patcher_messages):

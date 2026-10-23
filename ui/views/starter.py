@@ -25,6 +25,7 @@ from core import repomap_tree as rt
 from core import starterfile_view as sfview
 from core.pipeline_runner import collect_artifacts, start_pipeline
 from core.project_scanner import scan_project_root
+from core.local_path_picker import render_path_picker
 from core.verify import (
     verify_databases,
     verify_paths,
@@ -254,11 +255,17 @@ def render() -> None:
         horizontal=True,
         key="starter_mode",
     )
-    ss.starter_project_root = st.text_input(
-        "Project root", value=ss.starter_project_root, key="w_starter_project_root"
+    render_path_picker(
+        "Project root",
+        "starter_project_root",
+        "directory",
+        default_directory=str(ui_paths.WORKSPACE_DIR),
     )
-    ss.starter_file_name = st.text_input(
-        "Starterfile name", value=ss.starter_file_name, key="w_starter_file_name"
+    render_path_picker(
+        "Starterfile path or name",
+        "starter_file_name",
+        "file",
+        default_directory=ss.starter_project_root,
     )
 
     path = _starterfile_path()

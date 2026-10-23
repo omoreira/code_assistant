@@ -8,6 +8,7 @@ import streamlit as st
 
 from core import paths as ui_paths
 from core.llm import get_llm
+from core.local_path_picker import render_path_picker
 
 
 def _init_state() -> None:
@@ -28,13 +29,20 @@ def render() -> None:
     st.caption("Create or edit a pseudocode file, then convert it to real code.")
 
     ss = st.session_state
-    st.text_input("Project root", key="editor_project_root")
-    st.text_input(
-        "Pseudocode file (project-relative, e.g. src/pkg/module.py)",
-        key="editor_input",
+    render_path_picker(
+        "Project root", "editor_project_root", "directory", str(ui_paths.REPO_ROOT)
     )
-    st.text_input(
-        "Output file (optional; blank overwrites the input file)", key="editor_output"
+    render_path_picker(
+        "Pseudocode file (project-relative or absolute)",
+        "editor_input",
+        "file",
+        default_directory=ss.editor_project_root,
+    )
+    render_path_picker(
+        "Output file (optional; blank overwrites the input file)",
+        "editor_output",
+        "file",
+        default_directory=ss.editor_project_root,
     )
 
     col_load, col_save = st.columns(2)

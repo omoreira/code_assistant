@@ -42,6 +42,10 @@ streamlit run ui/sam_code_app.py --server.port 8504
 - **Patcher** -- a context-aware chat that reads project files and proposes
   `patch.pseudo` changes, validated with a dry run before you apply them.
 
+Path fields across these pages include an expandable local filesystem browser.
+It can navigate folders, select an existing file or folder, and choose a new
+filename in the current folder; paths can still be typed directly.
+
 ## Layout
 
 ```text
