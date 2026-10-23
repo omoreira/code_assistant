@@ -26,6 +26,7 @@ def _init_state() -> None:
     ss.setdefault("contract_requirements", "")
     ss.setdefault("contract_examples", "")
     ss.setdefault("contract_output", "assistant_contract.json")
+    ss.setdefault("contract_model", "deepseek-r1:14b")
 
 
 def _target(relative: str) -> Path:
@@ -142,6 +143,11 @@ def _assistant_contract() -> None:
         "file",
         ss.conv_project_root,
     )
+    st.selectbox(
+        "Local Ollama model",
+        ["deepseek-r1:14b", "qwen3:14b", "mistral:7b"],
+        key="contract_model",
+    )
     if st.button("Build assistant contract", type="primary", key="contract_run"):
         requirements = ss.contract_requirements.strip()
         examples = ss.contract_examples.strip()
@@ -164,9 +170,17 @@ def _assistant_contract() -> None:
         output_path = _target(output)
         try:
             from code_converter.assistant_contract_builder import AssistantContractBuilder
+            from shared.llm import LLMInterface
+            from shared.llm_config import resolve_llm
 
             with st.spinner("Summarizing samples and generating the contract…"):
-                written = AssistantContractBuilder(get_llm("generation")).create_from_files(
+                contract_llm = LLMInterface(
+                    resolved=resolve_llm(
+                        "reasoning",
+                        overrides={"provider": "ollama", "model": ss.contract_model},
+                    )
+                )
+                written = AssistantContractBuilder(contract_llm).create_from_files(
                     str(requirements_path), str(examples_path), str(output_path)
                 )
             contract_text = Path(written).read_text(encoding="utf-8")

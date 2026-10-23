@@ -7,6 +7,22 @@ import json
 from pathlib import Path
 from typing import Iterable, List, Optional
 
+CONTRACT_MODELS = ("deepseek-r1:14b", "qwen3:14b", "mistral:7b")
+
+_PLACEHOLDER_VALUES = {
+    "non-empty",
+    "non-empty string",
+    "string",
+    "array of strings",
+    "array of string",
+    "list of strings",
+}
+
+
+def _is_placeholder(value: str) -> bool:
+    normalized = " ".join(value.casefold().strip().split())
+    return normalized in _PLACEHOLDER_VALUES or normalized.startswith("array of ")
+
 
 class AssistantContractBuilder:
     """Extract obligations and output conventions with an injected LLM."""
@@ -115,10 +131,15 @@ class AssistantContractBuilder:
             raise ValueError("Contract 'rules' and 'obligations' must be arrays")
         for field in ("rules", "obligations"):
             if not value[field] or any(
-                not isinstance(item, str) or not item.strip() for item in value[field]
+                not isinstance(item, str)
+                or not item.strip()
+                or _is_placeholder(item)
+                for item in value[field]
             ):
                 raise ValueError(
-                    "Contract '{}' must contain at least one non-empty string".format(field)
+                    "Contract '{}' must contain extracted content, not placeholders".format(
+                        field
+                    )
                 )
         if isinstance(value["output_contract"], str):
             value["output_contract"] = {
@@ -134,17 +155,33 @@ class AssistantContractBuilder:
         output_contract.setdefault("required_sections", [])
         output_contract.setdefault("style", [])
         output_contract.setdefault("validation", [])
-        if not isinstance(output_contract["format"], str) or not output_contract[
-            "format"
-        ].strip():
-            raise ValueError("Contract 'output_contract.format' must be a non-empty string")
+        if (
+            not isinstance(output_contract["format"], str)
+            or not output_contract["format"].strip()
+            or _is_placeholder(output_contract["format"])
+        ):
+            raise ValueError(
+                "Contract 'output_contract.format' must describe the actual output format"
+            )
         for field in ("required_sections", "style", "validation"):
             if not isinstance(output_contract[field], list):
                 raise ValueError(
                     "Contract 'output_contract.{}' must be an array".format(field)
                 )
+            if any(
+                not isinstance(item, str) or not item.strip() or _is_placeholder(item)
+                for item in output_contract[field]
+            ):
+                raise ValueError(
+                    "Contract 'output_contract.{}' contains placeholder text".format(field)
+                )
         if not isinstance(value["open_questions"], list):
             raise ValueError("Contract 'open_questions' must be an array")
+        if any(
+            not isinstance(item, str) or not item.strip() or _is_placeholder(item)
+            for item in value["open_questions"]
+        ):
+            raise ValueError("Contract 'open_questions' contains placeholder text")
         return value
 
     def create_contract(self, requirements: str, examples: Iterable[str]) -> dict:
@@ -160,16 +197,19 @@ class AssistantContractBuilder:
             "sample summaries below. Extract concrete rules and required actions "
             "from the requirements. Rules and obligations MUST each contain one "
             "or more specific, non-empty items when supported by the source; do "
-            "not return empty arrays to avoid extraction. Treat requirements as "
+            "not return empty arrays to avoid extraction. Never put type "
+            "descriptions or placeholders such as 'Non-empty' or 'Array of strings' "
+            "in the contract values. Treat requirements as "
             "authoritative. Use sample summaries only to infer output structure, "
             "tone, formatting, and level of detail. Do not copy student-specific "
             "content or infer obligations that conflict with requirements. Put "
             "uncertainty in open_questions. Return only valid JSON, without "
-            "Markdown fences, with exactly this top-level structure:\n"
-            '{{"rules": [string], "obligations": [string], '
-            '"output_contract": {{"format": string, "required_sections": '
-            '[string], "style": [string], "validation": [string]}}, '
-            '"open_questions": [string]}}\n\n'
+            "Markdown fences. Use exactly these top-level keys: rules (array of "
+            "extracted rule strings), obligations (array of specific required "
+            "assistant actions), output_contract (object containing format, "
+            "required_sections, style, and validation), and open_questions (array "
+            "of unresolved questions). Every value must contain findings from "
+            "the sources, not a description of its expected type.\n\n"
             "REQUIREMENTS\n{}\n\nOUTPUT SAMPLE SUMMARIES\n{}"
         ).format(requirements, "\n\n".join(summaries))
         response = self.llm.call(prompt, temperature=0.2)
@@ -184,8 +224,9 @@ class AssistantContractBuilder:
                 "obligations are arrays of strings; output_contract is an object "
                 "with format (string), required_sections (array), style (array), "
                 "and validation (array); open_questions is an array of strings. "
-                "Rules and obligations must be non-empty, and format must be a "
-                "non-empty string. Rebuild the response from the source material; "
+                "Rules and obligations must contain actual extracted content, "
+                "and format must describe the actual output. Never use placeholders "
+                "like 'Non-empty' or 'Array of strings'. Rebuild from the source; "
                 "do not repeat empty arrays. Do not add Markdown fences or "
                 "commentary. The previous response failed because: {}\n\n"
                 "SOURCE MATERIAL:\n{}\n\nRESPONSE TO REPAIR:\n{}"
@@ -249,8 +290,13 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("-o", "--output", default="assistant_contract.json")
     from shared.llm_config import resolve_llm
 
-    defaults = resolve_llm("generation")
-    parser.add_argument("--model", default=defaults.model)
+    defaults = resolve_llm("reasoning", overrides={"provider": "ollama"})
+    parser.add_argument(
+        "--model",
+        choices=CONTRACT_MODELS,
+        default="deepseek-r1:14b",
+        help="Local Ollama model used for contract generation",
+    )
     parser.add_argument("--endpoint", default=defaults.base_url)
     args = parser.parse_args(argv)
 

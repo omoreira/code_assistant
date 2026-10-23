@@ -211,6 +211,8 @@ python -m code_converter.assistant_contract_builder requirements.md examples/ \
 ```
 
 The equivalent repository launcher is `scripts/build_assistant_contract.sh`.
+Contract generation defaults to Ollama `deepseek-r1:14b`; `--model` also accepts
+`qwen3:14b` and `mistral:7b`.
 
 The contract captures rules, obligations, output requirements inferred from
 the examples, and unresolved questions. Requirements can be `.txt`, `.md`, or
