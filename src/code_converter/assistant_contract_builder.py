@@ -47,8 +47,10 @@ class AssistantContractBuilder:
 
     @staticmethod
     def _parse_json(response: str) -> dict:
-        """Parse an LLM response as a JSON object, allowing outer code fences."""
+        """Parse a JSON object, tolerating fences and surrounding commentary."""
         text = response.strip()
+        if not text:
+            raise ValueError("LLM returned an empty response")
         if text.startswith("```"):
             lines = text.splitlines()
             if lines and lines[0].startswith("```"):
@@ -56,12 +58,26 @@ class AssistantContractBuilder:
             if lines and lines[-1].strip() == "```":
                 lines = lines[:-1]
             text = "\n".join(lines).strip()
-        try:
-            value = json.loads(text)
-        except json.JSONDecodeError as exc:
-            raise ValueError("LLM returned invalid JSON: {}".format(exc)) from exc
-        if not isinstance(value, dict):
-            raise ValueError("Contract JSON must have an object at its top level")
+        decoder = json.JSONDecoder()
+        value = None
+        last_error = None
+        for start in [0] + [index for index, char in enumerate(text) if char == "{"]:
+            try:
+                candidate, _ = decoder.raw_decode(text, start)
+            except json.JSONDecodeError as exc:
+                last_error = exc
+                continue
+            if isinstance(candidate, dict):
+                value = candidate
+                break
+        if value is None:
+            detail = str(last_error) if last_error else "no JSON object found"
+            preview = text[:160].replace("\n", " ")
+            raise ValueError(
+                "LLM response did not contain valid JSON ({}). Response starts: {!r}".format(
+                    detail, preview
+                )
+            )
         required = ("rules", "obligations", "output_contract", "open_questions")
         missing = [key for key in required if key not in value]
         if missing:
@@ -95,7 +111,25 @@ class AssistantContractBuilder:
             '"open_questions": [string]}}\n\n'
             "REQUIREMENTS\n{}\n\nOUTPUT EXAMPLES\n{}"
         ).format(requirements, "\n\n".join(examples))
-        return self._parse_json(self.llm.call(prompt, temperature=0.2))
+        response = self.llm.call(prompt, temperature=0.2)
+        try:
+            return self._parse_json(response)
+        except ValueError as first_error:
+            if not response.strip():
+                raise
+            repair_prompt = (
+                "Rewrite the following response as valid JSON only. Preserve its "
+                "intended information, and ensure the top-level keys are rules, "
+                "obligations, output_contract, and open_questions. Do not add "
+                "Markdown fences or commentary.\n\nRESPONSE TO REPAIR:\n{}"
+            ).format(response)
+            try:
+                return self._parse_json(self.llm.call(repair_prompt, temperature=0.0))
+            except ValueError as repair_error:
+                raise ValueError(
+                    "LLM did not produce a valid assistant contract after one repair "
+                    "attempt: {}".format(repair_error)
+                ) from first_error
 
     def create_from_files(
         self, requirements_path: str, examples_dir: str, output_path: str
