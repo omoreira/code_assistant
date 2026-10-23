@@ -89,10 +89,10 @@ class AssistantContractBuilder:
             "it conflicts with the requirements. Mark uncertainty in "
             "open_questions rather than inventing facts. Return only valid JSON, "
             "without Markdown fences, with exactly this top-level structure:\n"
-            '{"rules": [string], "obligations": [string], '
-            '"output_contract": {"format": string, "required_sections": '
-            '[string], "style": [string], "validation": [string]}, '
-            '"open_questions": [string]}\n\n'
+            '{{"rules": [string], "obligations": [string], '
+            '"output_contract": {{"format": string, "required_sections": '
+            '[string], "style": [string], "validation": [string]}}, '
+            '"open_questions": [string]}}\n\n'
             "REQUIREMENTS\n{}\n\nOUTPUT EXAMPLES\n{}"
         ).format(requirements, "\n\n".join(examples))
         return self._parse_json(self.llm.call(prompt, temperature=0.2))
