@@ -78,10 +78,39 @@ class AssistantContractBuilder:
                     detail, preview
                 )
             )
+        nested = value.get("assistant_contract")
+        if isinstance(nested, dict):
+            value = nested
+
+        def find_alias(names):
+            for name in names:
+                if name in value:
+                    result = value[name]
+                    return result if isinstance(result, list) else [result]
+            return []
+
+        if "rules" not in value:
+            value["rules"] = find_alias(
+                ("assistant_rules", "behavior_rules", "behavioral_rules", "guidelines")
+            )
+        if "obligations" not in value:
+            value["obligations"] = find_alias(
+                ("assistant_obligations", "duties", "responsibilities", "required_actions")
+            )
+        if "output_contract" not in value:
+            for alias in ("output_spec", "output_format", "output_requirements"):
+                if alias in value:
+                    value["output_contract"] = value[alias]
+                    break
+        value.setdefault("open_questions", [])
         required = ("rules", "obligations", "output_contract", "open_questions")
         missing = [key for key in required if key not in value]
         if missing:
-            raise ValueError("Contract JSON is missing keys: {}".format(", ".join(missing)))
+            raise ValueError(
+                "Contract JSON is missing keys: {} (returned keys: {})".format(
+                    ", ".join(missing), ", ".join(sorted(value))
+                )
+            )
         if not isinstance(value["rules"], list) or not isinstance(value["obligations"], list):
             raise ValueError("Contract 'rules' and 'obligations' must be arrays")
         if isinstance(value["output_contract"], str):
