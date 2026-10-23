@@ -165,9 +165,10 @@ def _assistant_contract() -> None:
         try:
             from code_converter.assistant_contract_builder import AssistantContractBuilder
 
-            written = AssistantContractBuilder(get_llm("generation")).create_from_files(
-                str(requirements_path), str(examples_path), str(output_path)
-            )
+            with st.spinner("Summarizing samples and generating the contract…"):
+                written = AssistantContractBuilder(get_llm("generation")).create_from_files(
+                    str(requirements_path), str(examples_path), str(output_path)
+                )
             contract_text = Path(written).read_text(encoding="utf-8")
             st.success("Wrote assistant contract to {}".format(written))
             st.json(json.loads(contract_text))

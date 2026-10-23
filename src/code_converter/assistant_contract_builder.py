@@ -34,7 +34,7 @@ class AssistantContractBuilder:
         examples = []
         for path in sorted(p for p in root.rglob("*") if p.is_file()):
             try:
-                content = path.read_text(encoding="utf-8")
+                content = path.read_text(encoding="utf-8-sig")
             except UnicodeDecodeError:
                 continue
             if content.strip():
@@ -113,6 +113,13 @@ class AssistantContractBuilder:
             )
         if not isinstance(value["rules"], list) or not isinstance(value["obligations"], list):
             raise ValueError("Contract 'rules' and 'obligations' must be arrays")
+        for field in ("rules", "obligations"):
+            if not value[field] or any(
+                not isinstance(item, str) or not item.strip() for item in value[field]
+            ):
+                raise ValueError(
+                    "Contract '{}' must contain at least one non-empty string".format(field)
+                )
         if isinstance(value["output_contract"], str):
             value["output_contract"] = {
                 "format": value["output_contract"],
@@ -127,9 +134,10 @@ class AssistantContractBuilder:
         output_contract.setdefault("required_sections", [])
         output_contract.setdefault("style", [])
         output_contract.setdefault("validation", [])
-        for field in ("format",):
-            if not isinstance(output_contract[field], str):
-                raise ValueError("Contract 'output_contract.{}' must be a string".format(field))
+        if not isinstance(output_contract["format"], str) or not output_contract[
+            "format"
+        ].strip():
+            raise ValueError("Contract 'output_contract.format' must be a non-empty string")
         for field in ("required_sections", "style", "validation"):
             if not isinstance(output_contract[field], list):
                 raise ValueError(
@@ -146,20 +154,24 @@ class AssistantContractBuilder:
         examples = list(examples)
         if not examples:
             raise ValueError("At least one output example is required")
+        summaries = self._summarize_examples(examples)
         prompt = (
             "Create a reusable assistant contract from the requirements and "
-            "output examples below. Treat requirements as authoritative. Use "
-            "examples only to infer output structure, tone, formatting, and "
-            "level of detail. Do not infer new obligations from an example if "
-            "it conflicts with the requirements. Mark uncertainty in "
-            "open_questions rather than inventing facts. Return only valid JSON, "
-            "without Markdown fences, with exactly this top-level structure:\n"
+            "sample summaries below. Extract concrete rules and required actions "
+            "from the requirements. Rules and obligations MUST each contain one "
+            "or more specific, non-empty items when supported by the source; do "
+            "not return empty arrays to avoid extraction. Treat requirements as "
+            "authoritative. Use sample summaries only to infer output structure, "
+            "tone, formatting, and level of detail. Do not copy student-specific "
+            "content or infer obligations that conflict with requirements. Put "
+            "uncertainty in open_questions. Return only valid JSON, without "
+            "Markdown fences, with exactly this top-level structure:\n"
             '{{"rules": [string], "obligations": [string], '
             '"output_contract": {{"format": string, "required_sections": '
             '[string], "style": [string], "validation": [string]}}, '
             '"open_questions": [string]}}\n\n'
-            "REQUIREMENTS\n{}\n\nOUTPUT EXAMPLES\n{}"
-        ).format(requirements, "\n\n".join(examples))
+            "REQUIREMENTS\n{}\n\nOUTPUT SAMPLE SUMMARIES\n{}"
+        ).format(requirements, "\n\n".join(summaries))
         response = self.llm.call(prompt, temperature=0.2)
         try:
             return self._parse_json(response)
@@ -172,9 +184,12 @@ class AssistantContractBuilder:
                 "obligations are arrays of strings; output_contract is an object "
                 "with format (string), required_sections (array), style (array), "
                 "and validation (array); open_questions is an array of strings. "
-                "Do not add Markdown fences or commentary. The previous response "
-                "failed validation because: {}\n\nRESPONSE TO REPAIR:\n{}"
-            ).format(first_error, response)
+                "Rules and obligations must be non-empty, and format must be a "
+                "non-empty string. Rebuild the response from the source material; "
+                "do not repeat empty arrays. Do not add Markdown fences or "
+                "commentary. The previous response failed because: {}\n\n"
+                "SOURCE MATERIAL:\n{}\n\nRESPONSE TO REPAIR:\n{}"
+            ).format(first_error, prompt, response)
             try:
                 return self._parse_json(self.llm.call(repair_prompt, temperature=0.0))
             except ValueError as repair_error:
@@ -182,6 +197,33 @@ class AssistantContractBuilder:
                     "LLM did not produce a valid assistant contract after one repair "
                     "attempt: {}".format(repair_error)
                 ) from first_error
+
+    def _summarize_examples(self, examples: List[str]) -> List[str]:
+        """Summarize each output sample in bounded text chunks."""
+        summaries = []
+        for example in examples:
+            header, _, body = example.partition("\n")
+            chunks = _text_chunks(body, 9000)
+            chunk_summaries = []
+            for index, chunk in enumerate(chunks, start=1):
+                sample_prompt = (
+                    "Summarize this output sample only for reusable structure and "
+                    "style: section headings and order, rating format, approval "
+                    "or revision wording, feedback organization, and tone. Do not "
+                    "retain student names, identifiers, scores, or subject-specific "
+                    "feedback. Do not invent requirements. Return at most 120 words. "
+                    "This is chunk {}/{} of {}.\n\n{}"
+                ).format(index, len(chunks), header, chunk)
+                summary = self.llm.call(
+                    sample_prompt, temperature=0.1, max_tokens=300
+                )
+                if not summary.strip():
+                    raise ValueError(
+                        "LLM returned an empty summary for output sample {}".format(header)
+                    )
+                chunk_summaries.append(summary.strip())
+            summaries.append("{}\n{}".format(header, "\n".join(chunk_summaries)))
+        return summaries
 
     def create_from_files(
         self, requirements_path: str, examples_dir: str, output_path: str
@@ -220,6 +262,28 @@ def main(argv: Optional[List[str]] = None) -> int:
     )
     print("Wrote assistant contract to {}".format(output))
     return 0
+
+
+def _text_chunks(text: str, max_chars: int) -> List[str]:
+    """Split text at paragraph boundaries, with a hard limit for long paragraphs."""
+    chunks = []
+    current = ""
+    for paragraph in text.split("\n\n"):
+        while len(paragraph) > max_chars:
+            if current:
+                chunks.append(current)
+                current = ""
+            chunks.append(paragraph[:max_chars])
+            paragraph = paragraph[max_chars:]
+        candidate = (current + "\n\n" + paragraph).strip()
+        if current and len(candidate) > max_chars:
+            chunks.append(current)
+            current = paragraph
+        else:
+            current = candidate
+    if current:
+        chunks.append(current)
+    return chunks or [""]
 
 
 if __name__ == "__main__":
