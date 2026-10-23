@@ -84,8 +84,28 @@ class AssistantContractBuilder:
             raise ValueError("Contract JSON is missing keys: {}".format(", ".join(missing)))
         if not isinstance(value["rules"], list) or not isinstance(value["obligations"], list):
             raise ValueError("Contract 'rules' and 'obligations' must be arrays")
+        if isinstance(value["output_contract"], str):
+            value["output_contract"] = {
+                "format": value["output_contract"],
+                "required_sections": [],
+                "style": [],
+                "validation": [],
+            }
         if not isinstance(value["output_contract"], dict):
-            raise ValueError("Contract 'output_contract' must be an object")
+            raise ValueError("Contract 'output_contract' must be an object or string")
+        output_contract = value["output_contract"]
+        output_contract.setdefault("format", "")
+        output_contract.setdefault("required_sections", [])
+        output_contract.setdefault("style", [])
+        output_contract.setdefault("validation", [])
+        for field in ("format",):
+            if not isinstance(output_contract[field], str):
+                raise ValueError("Contract 'output_contract.{}' must be a string".format(field))
+        for field in ("required_sections", "style", "validation"):
+            if not isinstance(output_contract[field], list):
+                raise ValueError(
+                    "Contract 'output_contract.{}' must be an array".format(field)
+                )
         if not isinstance(value["open_questions"], list):
             raise ValueError("Contract 'open_questions' must be an array")
         return value
@@ -119,10 +139,13 @@ class AssistantContractBuilder:
                 raise
             repair_prompt = (
                 "Rewrite the following response as valid JSON only. Preserve its "
-                "intended information, and ensure the top-level keys are rules, "
-                "obligations, output_contract, and open_questions. Do not add "
-                "Markdown fences or commentary.\n\nRESPONSE TO REPAIR:\n{}"
-            ).format(response)
+                "intended information and use this exact schema: rules and "
+                "obligations are arrays of strings; output_contract is an object "
+                "with format (string), required_sections (array), style (array), "
+                "and validation (array); open_questions is an array of strings. "
+                "Do not add Markdown fences or commentary. The previous response "
+                "failed validation because: {}\n\nRESPONSE TO REPAIR:\n{}"
+            ).format(first_error, response)
             try:
                 return self._parse_json(self.llm.call(repair_prompt, temperature=0.0))
             except ValueError as repair_error:
