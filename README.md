@@ -40,7 +40,9 @@ part of the current release.
   pseudocode with Ollama, analyzes the result, and documents the repository.
 - **`code_converter`** reads UTF-8 research notes and asks an LLM to produce
   `patch.pseudo` with `#PATCHES` and `#NEW SCRIPTS` sections, and converts a
-  single code-devoided file into real code for its extension.
+  single code-devoided file into real code for its extension. It can also
+  produce a JSON assistant contract from a text/Markdown requirements file and
+  output examples in a directory.
 - **`code_analyzer`** parses and applies those patch entries, and provides the
   pre-generation `pseudocode_analyzer` that checks a starterfile's sections,
   approval marker, and path structure before any code is written. Conversion
@@ -200,6 +202,19 @@ Convert a single code-devoided file into real code for its file extension:
 ```bash
 python -m code_converter.pseudofile_converter path/to/module.py
 ```
+
+Create a JSON assistant contract from requirements and output examples:
+
+```bash
+python -m code_converter.assistant_contract_builder requirements.md examples/ \
+  --output assistant_contract.json
+```
+
+The equivalent repository launcher is `scripts/build_assistant_contract.sh`.
+
+The contract captures rules, obligations, output requirements inferred from
+the examples, and unresolved questions. Requirements can be `.txt`, `.md`, or
+`.markdown`; example files are read recursively as UTF-8 text.
 
 Apply a patch plan through the API after reviewing it:
 

@@ -1,7 +1,8 @@
-"""Converter page: ``pseudo2code`` and ``longtext2pseudo`` tasks."""
+"""Converter page for pseudocode, research notes, and assistant contracts."""
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import streamlit as st
@@ -21,6 +22,9 @@ def _init_state() -> None:
     ss.setdefault("lt_notes_file", "")
     ss.setdefault("lt_output", "patch.pseudo")
     ss.setdefault("lt_docker", "Auto")
+    ss.setdefault("contract_requirements", "")
+    ss.setdefault("contract_examples", "")
+    ss.setdefault("contract_output", "assistant_contract.json")
 
 
 def _target(relative: str) -> Path:
@@ -95,12 +99,64 @@ def _longtext2pseudo() -> None:
             st.error("Generation failed: {}".format(exc))
 
 
+def _assistant_contract() -> None:
+    ss = st.session_state
+    st.caption(
+        "Extract assistant rules and obligations, then infer output requirements "
+        "from example files. The result is a JSON contract."
+    )
+    st.text_input(
+        "Requirements file (.txt or .md; project-relative or absolute)",
+        key="contract_requirements",
+    )
+    st.text_input(
+        "Output examples directory (project-relative or absolute)",
+        key="contract_examples",
+    )
+    st.text_input("Contract JSON output path", key="contract_output")
+    if st.button("Build assistant contract", type="primary", key="contract_run"):
+        requirements = ss.contract_requirements.strip()
+        examples = ss.contract_examples.strip()
+        output = ss.contract_output.strip() or "assistant_contract.json"
+        if not requirements or not examples:
+            st.error("Provide a requirements file and an examples directory.")
+            return
+        requirements_path = _target(requirements)
+        if not requirements_path.is_file():
+            requirements_path = Path(requirements).expanduser()
+        examples_path = _target(examples)
+        if not examples_path.is_dir():
+            examples_path = Path(examples).expanduser()
+        if not requirements_path.is_file():
+            st.error("Requirements file not found: {}".format(requirements_path))
+            return
+        if not examples_path.is_dir():
+            st.error("Examples directory not found: {}".format(examples_path))
+            return
+        output_path = _target(output)
+        try:
+            from code_converter.assistant_contract_builder import AssistantContractBuilder
+
+            written = AssistantContractBuilder(get_llm("generation")).create_from_files(
+                str(requirements_path), str(examples_path), str(output_path)
+            )
+            contract_text = Path(written).read_text(encoding="utf-8")
+            st.success("Wrote assistant contract to {}".format(written))
+            st.json(json.loads(contract_text))
+        except Exception as exc:  # noqa: BLE001
+            st.error("Contract generation failed: {}".format(exc))
+
+
 def render() -> None:
     _init_state()
     st.header("Converter")
     st.text_input("Project root", key="conv_project_root")
-    tab_p2c, tab_lt = st.tabs(["pseudo2code", "longtext2pseudo"])
+    tab_p2c, tab_lt, tab_contract = st.tabs(
+        ["pseudo2code", "longtext2pseudo", "assistant contract"]
+    )
     with tab_p2c:
         _pseudo2code()
     with tab_lt:
         _longtext2pseudo()
+    with tab_contract:
+        _assistant_contract()

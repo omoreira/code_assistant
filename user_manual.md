@@ -198,6 +198,20 @@ complete contents of the new file
 Patch entries contain unified diff hunks. New-script entries contain complete
 file contents. Paths are relative to the target repository root.
 
+To build a JSON assistant contract from a plain-text or Markdown requirements
+file and a directory of output examples, run:
+
+```bash
+python -m code_converter.assistant_contract_builder requirements.md examples/ \
+  --output assistant_contract.json
+```
+
+You can also run `scripts/build_assistant_contract.sh` with the same arguments.
+
+The output object contains `rules`, `obligations`, `output_contract`, and
+`open_questions`. Example files are read recursively as UTF-8 text; files that
+cannot be decoded as UTF-8 are skipped.
+
 ## 4. Apply a patch plan
 
 Patch application belongs to `code_analyzer`. The public API validates paths,

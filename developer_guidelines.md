@@ -15,7 +15,7 @@ functional areas are:
 | Package | Responsibility |
 | --- | --- |
 | `code_starter` | Define a starterfile, create a repository structure, create SQLite databases, generate source files, and orchestrate the end-to-end pipeline |
-| `code_converter` | Convert long research notes into `patch.pseudo` |
+| `code_converter` | Convert research notes into `patch.pseudo`, build JSON assistant contracts, and convert pseudofiles |
 | `code_analyzer` | Parse/apply `#PATCHES` and create `#NEW SCRIPTS` entries, and analyze a starterfile before generation |
 | `code_refractor` | Verify and perform structural path/module changes |
 | `ui_builder` | Create `ui/uidesign.pseudo` and generate a UI in a target repository |

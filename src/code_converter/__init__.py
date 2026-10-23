@@ -1,10 +1,14 @@
-"""Tools for converting pseudocode and long-form notes into code plans."""
+"""Tools for converting notes, examples, and pseudocode into artifacts."""
 
-__all__ = ["LongContextReader", "PseudofileConverter"]
+__all__ = ["AssistantContractBuilder", "LongContextReader", "PseudofileConverter"]
 
 
 def __getattr__(name):
     """Load implementation symbols lazily so ``python -m`` stays warning-free."""
+    if name == "AssistantContractBuilder":
+        from code_converter.assistant_contract_builder import AssistantContractBuilder
+
+        return AssistantContractBuilder
     if name == "LongContextReader":
         from code_converter.longtext_pseudo_converter import LongContextReader
 

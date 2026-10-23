@@ -37,7 +37,8 @@ streamlit run ui/sam_code_app.py --server.port 8504
   The **Review & Run** tab runs the `code_starter` pipeline as a background
   process and shows a per-stage report.
 - **Editor** -- create/edit a pseudocode file and convert it to real code.
-- **Converter** -- `pseudo2code` and `longtext2pseudo` tasks.
+- **Converter** -- `pseudo2code`, `longtext2pseudo`, and JSON assistant
+  contract generation from a text/Markdown requirements file and output samples.
 - **Patcher** -- a context-aware chat that reads project files and proposes
   `patch.pseudo` changes, validated with a dry run before you apply them.
 
